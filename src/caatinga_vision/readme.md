@@ -21,12 +21,9 @@ The system is currently configured with the COCO Dataset, enabling it to recogni
 ### Future Scalability: Transfer Learning
 
 The caatinga_vision package is designed as a base layer. By replacing the coco.names and .weights files, the pipeline can be "re-trained" to detect specific agricultural interests such as:
-
-    Identifying weeds vs. crops for precision spraying.
-
-    Detecting fruit ripeness levels for automated harvesting.
-
-    Monitoring plant stress or disease markers.
+- Identifying weeds vs. crops for precision spraying.
+- Detecting fruit ripeness levels for automated harvesting.
+- Monitoring plant stress or disease markers.
 
 
 ### **Key Features**
