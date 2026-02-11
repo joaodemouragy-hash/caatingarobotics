@@ -1,13 +1,13 @@
 # caatingarobotics
 
-Workspace ROS 2 com os pacotes:
+ROS 2 workspace with the following packages:
 
 - `src/agro_robot_sim`
 - `src/caatinga_vision`
 
-## Requisitos
+## Requirements
 
-- ROS 2 instalado
+- ROS 2 installed
 - `colcon`
 
 ## Build
@@ -17,17 +17,16 @@ cd /home/joaodemoura/agro_robot_ws
 colcon build
 ```
 
-## Execucao
+## Run
 
-Use os arquivos de launch de cada pacote conforme o fluxo desejado.
+Use each package launch files according to your target workflow.
 
-## Dataset e pesos
+## Dataset and model weights
 
-Este repositorio publica somente codigo e configuracoes essenciais.
-Arquivos pesados (imagens, labels, pesos como `yolo11n.pt`) ficam fora do GitHub.
+This repository includes source code and essential configuration only.
+Large files (images, labels, model weights such as `yolo11n.pt`) stay outside GitHub.
 
-Se for treinar ou rodar inferencia, adicione localmente:
+To train or run inference locally, add:
 
-- dataset em `datasets/agro_v1/`
-- pesos de modelo no caminho esperado pelos scripts/launch
-
+- the dataset under `datasets/agro_v1/`
+- model weights at the paths expected by your scripts/launch files

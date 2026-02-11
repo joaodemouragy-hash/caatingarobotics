@@ -3,7 +3,7 @@
 <package format="3">
   <name>caatinga_vision</name>
   <version>0.1.0</version>
-  <description>Pipeline de visao computacional para rastreabilidade inteligente do Agro Robot</description>
+  <description>Computer vision pipeline for smart Agro Robot traceability</description>
   <maintainer email="joao@example.com">joaodemoura</maintainer>
   <license>Apache-2.0</license>
 
