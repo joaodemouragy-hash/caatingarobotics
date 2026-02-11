@@ -1,0 +1,23 @@
+slam_toolbox:
+  ros__parameters:
+    # Plugins
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    
+    # ROS Parameters
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_footprint
+    scan_topic: /scan
+    mode: mapping # Mapeamento ao vivo
+
+    # Robot Specifics (Para o seu robô grande)
+    max_laser_range: 20.0 # Aumentei para garantir
+    minimum_time_interval: 0.2
+    transform_timeout: 2.0
+    tf_buffer_duration: 30.0
+    stack_size_to_use: 40000000
+    enable_interactive_mode: true
+    use_sim_time: true

@@ -1,0 +1,39 @@
+camera_source_node:
+  ros__parameters:
+    camera_index: 0
+    fps: 12.0
+    frame_id: "camera_link"
+    image_topic: "/caatinga_vision/camera/image_raw"
+    camera_info_topic: "/caatinga_vision/camera/camera_info"
+    image_width: 0
+    image_height: 0
+
+yolo_inference_node:
+  ros__parameters:
+    model_path: "~/models/best.pt"
+    confidence_mode: "economico"
+    confidence_threshold_conservador: 0.50
+    confidence_threshold_economico: 0.85
+    inference_device: "cpu"
+    image_topic: "/caatinga_vision/camera/image_raw"
+    detections_topic: "/caatinga_vision/detections"
+    overlay_topic: "/caatinga_vision/overlay/image_raw"
+    overlay_cache_path: "/tmp/caatinga_vision_overlay.jpg"
+
+infestation_analytics_node:
+  ros__parameters:
+    session_id: ""
+    grid_resolution_m: 1.0
+    pump_rate_l_min: 3.5
+    confidence_mode: "economico"
+    detections_topic: "/caatinga_vision/detections"
+    status_topic: "/caatinga_vision/infestation/status"
+    spray_recommendation_topic: "/caatinga_vision/spray/recommendation"
+    status_cache_path: "/tmp/caatinga_vision_status.json"
+    logs_base_dir: "~/agro_robot_ws/logs_rastreabilidade"
+    detection_persistence_sec: 1.5
+    dataset_data_yaml: "~/agro_robot_ws/datasets/agro_v1/data.yaml"
+    model_path: ""
+    model_check_status: "unknown"
+    model_names_b64: ""
+    model_names_json: ""

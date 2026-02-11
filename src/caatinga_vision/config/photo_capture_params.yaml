@@ -1,0 +1,14 @@
+photo_capture_node:
+  ros__parameters:
+    session_id: ""
+    camera_index: 0
+    fps: 8.0
+    capture_distance_m: 0.5
+    speed_min_m_s: 0.05
+    image_width: 1280
+    image_height: 720
+    jpeg_quality: 90
+    reserve_space_mb: 512
+    usb_mount_path: ""
+    status_cache_path: "/tmp/caatinga_capture_status.json"
+    preview_cache_path: "/tmp/caatinga_capture_latest.jpg"

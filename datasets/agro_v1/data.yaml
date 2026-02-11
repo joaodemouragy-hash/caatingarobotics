@@ -1,0 +1,9 @@
+path: /home/joaodemoura/agro_robot_ws/datasets/agro_v1
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: 'defict_nitrogenio'
+  1: 'folha_maracuja_saudavel'
+  2: 'maracuja'
+  3: 'objects'

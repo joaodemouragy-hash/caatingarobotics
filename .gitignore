@@ -1,0 +1,28 @@
+# ROS 2 workspace artifacts
+/build/
+/install/
+/log/
+/logs_rastreabilidade/
+/runs/
+
+# Python artifacts
+**/__pycache__/
+*.py[cod]
+*.so
+
+# Training and model artifacts
+*.pt
+*.onnx
+*.engine
+*.cache
+src.rar
+
+# Session and generated helper files
+frames_*.gv
+frames_*.pdf
+
+# Dataset heavy contents (keep only metadata like data.yaml)
+datasets/agro_v1/raw/
+datasets/agro_v1/images/
+datasets/agro_v1/labels/
+
