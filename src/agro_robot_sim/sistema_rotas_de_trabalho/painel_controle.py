@@ -2738,7 +2738,7 @@ class AgroRobotGUI(QMainWindow):
         for pattern in ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp"):
             files.extend(glob(os.path.join(directory, pattern)))
             files.extend(glob(os.path.join(directory, pattern.upper())))
-        return sorted(set([p for p in files if os.path.isfile(p)]))
+        return sorted({p for p in files if os.path.isfile(p)})
 
     def _safe_copy_with_suffix(self, src_path, dst_dir):
         os.makedirs(dst_dir, exist_ok=True)
