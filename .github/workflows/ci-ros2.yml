@@ -53,27 +53,27 @@ jobs:
           source install/setup.bash
           colcon test --event-handlers console_direct+ --return-code-on-test-failure || {
             python3 - <<'PY'
-            import glob
-            import xml.etree.ElementTree as ET
+          import glob
+          import xml.etree.ElementTree as ET
 
-            failures = []
-            for path in glob.glob('build/**/test_results/**/*.xml', recursive=True):
-                try:
-                    root = ET.parse(path).getroot()
-                except ET.ParseError:
-                    continue
-                for testcase in root.findall('.//testcase'):
-                    if testcase.find('failure') is not None or testcase.find('error') is not None:
-                        classname = testcase.attrib.get('classname', 'unknown')
-                        name = testcase.attrib.get('name', 'unknown')
-                        failures.append((classname, name, path))
+          failures = []
+          for path in glob.glob('build/**/test_results/**/*.xml', recursive=True):
+              try:
+                  root = ET.parse(path).getroot()
+              except ET.ParseError:
+                  continue
+              for testcase in root.findall('.//testcase'):
+                  if testcase.find('failure') is not None or testcase.find('error') is not None:
+                      classname = testcase.attrib.get('classname', 'unknown')
+                      name = testcase.attrib.get('name', 'unknown')
+                      failures.append((classname, name, path))
 
-            if failures:
-                preview = "; ".join(f"{classname}::{name}" for classname, name, _ in failures[:5])
-                print(f"::error title=colcon test failures::{preview}")
-            else:
-                print("::error title=colcon test failures::No failing testcase entries found in xUnit XML.")
-            PY
+          if failures:
+              preview = "; ".join(f"{classname}::{name}" for classname, name, _ in failures[:5])
+              print(f"::error title=colcon test failures::{preview}")
+          else:
+              print("::error title=colcon test failures::No failing testcase entries found in xUnit XML.")
+          PY
             exit 1
           }
 
