@@ -1,11 +1,11 @@
 import os
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction, RegisterEventHandler
-from launch.event_handlers import OnProcessExit
+from launch.actions import IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import xacro
+
 
 def generate_launch_description():
     pkg_name = 'agro_robot_sim'
@@ -14,7 +14,8 @@ def generate_launch_description():
     # 1. Caminhos dos arquivos
     xacro_file = os.path.join(pkg_share, 'urdf', 'robo_caatinga.urdf.xacro')
     slam_params_file = os.path.join(pkg_share, 'config', 'mapper_params_online_async.yaml')
-    rviz_config_file = os.path.join(pkg_share, 'config', 'mapping.rviz') # Vamos criar esse arquivo já já
+    # Vamos criar esse arquivo já já.
+    rviz_config_file = os.path.join(pkg_share, 'config', 'mapping.rviz')
 
     # 2. Processar URDF
     doc = xacro.process_file(xacro_file)
@@ -46,11 +47,15 @@ def generate_launch_description():
     # 6. SLAM Toolbox (Cria o MAP e corrige a posição)
     # Usamos um TimerAction para dar tempo do Gazebo carregar antes de iniciar o SLAM
     slam = TimerAction(
-        period=5.0, # Espera 5 segundos
+        period=5.0,  # Espera 5 segundos
         actions=[
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_async_launch.py')
+                    os.path.join(
+                        get_package_share_directory('slam_toolbox'),
+                        'launch',
+                        'online_async_launch.py',
+                    )
                 ),
                 launch_arguments={
                     'use_sim_time': 'true',

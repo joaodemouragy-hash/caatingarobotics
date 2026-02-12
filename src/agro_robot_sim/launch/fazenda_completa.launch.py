@@ -7,12 +7,12 @@ from launch.substitutions import LaunchConfiguration
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     # 1. Obter diretórios dos pacotes
     pkg_agro = get_package_share_directory('agro_robot_sim')
     pkg_nav2 = get_package_share_directory('nav2_bringup')
     pkg_slam = get_package_share_directory('slam_toolbox')
-    pkg_robot_localization = get_package_share_directory('robot_localization') # Necessário para o GPS
 
     # 2. Definir Argumentos de Launch
     slam_arg = DeclareLaunchArgument(
@@ -31,12 +31,12 @@ def generate_launch_description():
     world_file_name = LaunchConfiguration('world')
 
     # 3. Definir Caminhos dos Arquivos
-    world_path = [os.path.join(pkg_agro, 'worlds', ''), world_file_name] 
-    map_file = os.path.join(pkg_agro, 'maps', 'novo_mapa_fazenda.yaml') 
+    world_path = [os.path.join(pkg_agro, 'worlds', ''), world_file_name]
+    map_file = os.path.join(pkg_agro, 'maps', 'novo_mapa_fazenda.yaml')
     params_file = os.path.join(pkg_agro, 'config', 'nav2_speed.yaml')
     rviz_nav2 = os.path.join(pkg_nav2, 'rviz', 'nav2_default_view.rviz')
     rviz_slam = os.path.join(pkg_slam, 'config', 'slam_toolbox_default.rviz')
-    
+
     # --- NOVIDADE 1: Arquivo de parâmetros do GPS ---
     gps_params_file = os.path.join(pkg_agro, 'config', 'gps_ekf.yaml')
 
@@ -50,7 +50,7 @@ def generate_launch_description():
 
     # --- NOVIDADE 2: Nós de Localização GPS (Robot Localization) ---
     # Estes nós substituem o AMCL quando estamos navegando (slam=False)
-    
+
     # Nó A: Converte Latitude/Longitude para Metros (X/Y)
     navsat_transform_node = Node(
         condition=UnlessCondition(slam),
@@ -62,7 +62,7 @@ def generate_launch_description():
         parameters=[gps_params_file, {'use_sim_time': True}],
         remappings=[
             ('imu', '/imu'),
-            ('gps/fix', '/gps/fix'), 
+            ('gps/fix', '/gps/fix'),
             ('gps/filtered', '/gps/filtered'),
             ('odometry/gps', '/odometry/gps')
         ]
@@ -165,7 +165,10 @@ def generate_launch_description():
     return LaunchDescription([
         slam_arg,
         world_arg,
-        LogInfo(condition=UnlessCondition(slam), msg='GPS mode ativo: AMCL desativado, map_server ativo.'),
+        LogInfo(
+            condition=UnlessCondition(slam),
+            msg='GPS mode ativo: AMCL desativado, map_server ativo.',
+        ),
         sim_launch,
         # Delay Nav2 stack until the robot is spawned and odom TF starts publishing.
         TimerAction(

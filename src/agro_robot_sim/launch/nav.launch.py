@@ -6,6 +6,7 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import xacro
 
+
 def generate_launch_description():
     pkg_name = 'agro_robot_sim'
     pkg_share = get_package_share_directory(pkg_name)
@@ -34,19 +35,14 @@ def generate_launch_description():
         output='screen', parameters=[{'robot_description': robot_desc, 'use_sim_time': True}]
     )
 
-    # 5. SLAM + NAV2 (O Cérebro)
-    # Usamos o launch padrão do Nav2 que já traz SLAM junto
-    nav2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('nav2_bringup'), 'launch', 'navigation_launch.py')
-        ),
-        launch_arguments={'use_sim_time': 'True', 'params_file': os.path.join(pkg_share, 'config', 'nav2_params.yaml')}.items()
-    )
-    
-    # Inicia o SLAM Toolbox (Mapeamento)
+    # 5. Inicia o SLAM Toolbox (Mapeamento)
     slam = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_async_launch.py')
+            os.path.join(
+                get_package_share_directory('slam_toolbox'),
+                'launch',
+                'online_async_launch.py',
+            )
         ),
         launch_arguments={'use_sim_time': 'True'}.items()
     )
@@ -56,5 +52,4 @@ def generate_launch_description():
         rsp,
         spawn,
         slam,
-        # nav2 # (Nota: Primeiro vamos garantir que o SLAM funcione, depois ativamos o Nav2 completo)
     ])
