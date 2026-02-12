@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import rclpy
-from rclpy.node import Node
-from geometry_msgs.msg import PoseWithCovarianceStamped
 import csv
+import math
 import os
 import sys
 import threading
-import math
+
+from geometry_msgs.msg import PoseWithCovarianceStamped
+import rclpy
+from rclpy.node import Node
 
 
 class GravadorRotas(Node):

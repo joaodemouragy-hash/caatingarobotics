@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+from datetime import datetime, timezone
 import json
 import math
 import os
@@ -9,11 +10,10 @@ import shutil
 import sys
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
 
-import rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
+import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, String
 

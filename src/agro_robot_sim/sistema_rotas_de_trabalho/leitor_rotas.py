@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-import rclpy
-from rclpy.node import Node
-from rclpy.action import ActionClient
-from nav2_msgs.action import FollowWaypoints
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav_msgs.msg import Odometry
 import csv
-import os
 import math
+import os
 import sys  # <--- IMPORTANTE PARA LER O NOME VINDO DO PAINEL
 import time
 from action_msgs.msg import GoalStatus
-from std_srvs.srv import Trigger
 from action_msgs.srv import CancelGoal
+from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from nav2_msgs.action import FollowWaypoints
+from nav_msgs.msg import Odometry
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from std_srvs.srv import Trigger
 
 
 class LeitorRotas(Node):

@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
-import time
 import math
+import time
+
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy

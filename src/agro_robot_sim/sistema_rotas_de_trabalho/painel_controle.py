@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-import sys
-import os
-import signal
-import subprocess
-import shutil
-import time
-import re
-import shlex
-import site
+import base64
 import csv
+from glob import glob
 import json
 import math
+import os
 import random
-import base64
-import threading
+import re
+import shlex
+import shutil
+import signal
+import site
+import subprocess
+import sys
 import tempfile
+import threading
+import time
 import zipfile
-from glob import glob
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLabel, QListWidget,
