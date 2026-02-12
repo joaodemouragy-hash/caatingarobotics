@@ -18,14 +18,15 @@ import threading
 import time
 import zipfile
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                             QHBoxLayout, QPushButton, QLabel, QListWidget,
-                             QFrame, QMessageBox, QTextEdit, QTabWidget, QProgressBar,
-                             QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QLineEdit,
-                             QDialog, QDialogButtonBox, QListWidgetItem, QGridLayout,
-                             QTreeWidget, QTreeWidgetItem, QInputDialog, QFileDialog)
-from PyQt5.QtGui import QFont, QColor, QTextCursor, QPixmap
-from PyQt5.QtCore import Qt, QProcess, QTimer, QUrl, QThread, pyqtSignal, QEventLoop
+from PyQt5.QtCore import QEventLoop, QProcess, Qt, QThread, QTimer, QUrl, pyqtSignal
+from PyQt5.QtGui import QColor, QFont, QPixmap, QTextCursor
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
+                             QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFrame,
+                             QGridLayout, QHBoxLayout, QInputDialog, QLabel,
+                             QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
+                             QMessageBox, QProgressBar, QPushButton, QSpinBox,
+                             QTabWidget, QTextEdit, QTreeWidget, QTreeWidgetItem,
+                             QVBoxLayout, QWidget)
 
 WEBENGINE_ERROR = ""
 try:

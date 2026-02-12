@@ -413,7 +413,7 @@ class RastreabilidadeNode(Node):
         self._process_xy(msg.pose.pose.position.x, msg.pose.pose.position.y)
 
     def _convex_hull(self, points):
-        pts = sorted(set((float(x), float(y)) for x, y in points))
+        pts = sorted({(float(x), float(y)) for x, y in points})
         if len(pts) <= 1:
             return pts
 
