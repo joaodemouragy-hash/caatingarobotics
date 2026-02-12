@@ -14,6 +14,7 @@ from action_msgs.msg import GoalStatus
 from std_srvs.srv import Trigger
 from action_msgs.srv import CancelGoal
 
+
 class LeitorRotas(Node):
     def __init__(self):
         super().__init__('leitor_rotas')
@@ -87,7 +88,7 @@ class LeitorRotas(Node):
         # Tenta achar o arquivo com ou sem extensão .csv
         base_path = os.path.join(self.base_path, 'rotas_de_trabalho')
         file_path = os.path.join(base_path, f'{nome_rota}.csv')
-        
+
         if not os.path.exists(file_path):
             # Tenta sem o .csv caso o nome já tenha vindo com ele
             file_path = os.path.join(base_path, f'{nome_rota}')
@@ -101,12 +102,13 @@ class LeitorRotas(Node):
             with open(file_path, 'r') as file:
                 reader = csv.reader(file)
                 for i, row in enumerate(reader):
-                    if not row: continue
+                    if not row:
+                        continue
                     try:
                         x, y, yaw = map(float, row)
                     except ValueError:
                         continue
-                    
+
                     pose = PoseStamped()
                     pose.header.frame_id = 'map'
                     pose.header.stamp = self.get_clock().now().to_msg()
@@ -120,15 +122,15 @@ class LeitorRotas(Node):
                     pose.pose.orientation.w = qw
                     poses.append(pose)
         except Exception as e:
-             self.get_logger().error(f"Erro ao ler arquivo: {e}")
-             rclpy.shutdown()
-             return
+            self.get_logger().error(f"Erro ao ler arquivo: {e}")
+            rclpy.shutdown()
+            return
 
         if not poses:
             self.get_logger().warn("Rota vazia ou inválida.")
             rclpy.shutdown()
             return
-        
+
         self._poses = poses
         self._active_poses = poses
         self._waypoint_offset = 0
@@ -148,7 +150,7 @@ class LeitorRotas(Node):
             self._final_timer = None
 
         self.get_logger().info(f"Conectando ao Nav2... Carregando rota: {nome_rota}")
-        
+
         # Em SLAM o Nav2 pode demorar mais para subir; espera com retries
         timeout_total = 30.0
         waited = 0.0
@@ -160,8 +162,12 @@ class LeitorRotas(Node):
 
         if waited >= timeout_total:
             # Tenta namespace alternativo
-            self.get_logger().warn("Tentando action server alternativo /waypoint_follower/follow_waypoints")
-            self._action_client = ActionClient(self, FollowWaypoints, 'waypoint_follower/follow_waypoints')
+            self.get_logger().warn(
+                "Tentando action server alternativo /waypoint_follower/follow_waypoints"
+            )
+            self._action_client = ActionClient(
+                self, FollowWaypoints, 'waypoint_follower/follow_waypoints'
+            )
             waited = 0.0
             while rclpy.ok() and waited < timeout_total:
                 if self._action_client.wait_for_server(timeout_sec=2.0):
@@ -171,16 +177,17 @@ class LeitorRotas(Node):
 
             if waited >= timeout_total:
                 self.get_logger().error(
-                    "Servidor Nav2 (follow_waypoints) não disponível! Verifique se a simulação está rodando."
+                    "Servidor Nav2 (follow_waypoints) não disponível! "
+                    "Verifique se a simulação está rodando."
                 )
                 rclpy.shutdown()
                 return
 
         self.get_logger().info(f"Enviando {len(poses)} waypoints...")
-        
+
         goal_msg = FollowWaypoints.Goal()
         goal_msg.poses = poses
-        
+
         self._send_goal_future = self._action_client.send_goal_async(
             goal_msg, feedback_callback=self._feedback_callback
         )
@@ -400,10 +407,11 @@ class LeitorRotas(Node):
         self._send_goal_future = self._action_client.send_goal_async(goal_msg)
         self._send_goal_future.add_done_callback(self.goal_response_callback)
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = LeitorRotas()
-    
+
     # --- A MÁGICA ESTÁ AQUI ---
     # Se o script receber argumentos (ex: python3 leitor.py rota1), ele usa direto.
     # Se não receber nada, ele pede para digitar (modo manual).
@@ -411,15 +419,16 @@ def main(args=None):
         nome_rota = sys.argv[1]
     else:
         nome_rota = input("Digite o nome da rota (ex: rota1): ")
-        
+
     node.send_goal(nome_rota)
-    
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     except Exception:
         pass
+
 
 if __name__ == '__main__':
     main()
