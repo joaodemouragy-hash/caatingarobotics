@@ -1,14 +1,15 @@
 #! /usr/bin/env python3
-import time
 import math
+import time
+
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
-from rclpy.duration import Duration
 
 """
 SCRIPT DE MISSÃO AGRÍCOLA - ROTA GRAVADA (CORRIGIDO)
 """
+
 
 def create_pose(navigator, x, y, z_w):
     pose = PoseStamped()
@@ -20,7 +21,7 @@ def create_pose(navigator, x, y, z_w):
     pose.pose.orientation.x = 0.0
     pose.pose.orientation.y = 0.0
     pose.pose.orientation.w = z_w
-    
+
     # Cálculo automático do Z para validar o quaternion
     try:
         val_z = math.sqrt(1 - min(z_w**2, 1.0))
@@ -30,22 +31,23 @@ def create_pose(navigator, x, y, z_w):
 
     return pose
 
+
 def main():
     rclpy.init()
     navigator = BasicNavigator()
 
     print("🚜 Aguardando o Nav2 ficar ativo...")
     navigator.waitUntilNav2Active()
-    
+
     # --- PROTOCOLO DE SEGURANÇA ---
     print("📍 Definindo posição inicial (0,0)...")
     initial_pose = create_pose(navigator, 0.0, 0.0, 1.0)
     navigator.setInitialPose(initial_pose)
-    
+
     print("🧹 Limpando mapas de custo...")
     navigator.clearAllCostmaps()
-    time.sleep(1.0) 
-    
+    time.sleep(1.0)
+
     print("✅ Nav2 Pronto! Iniciando Rota Gravada.")
 
     waypoints = []
@@ -86,11 +88,11 @@ def main():
     while not navigator.isTaskComplete():
         i += 1
         feedback = navigator.getFeedback()
-        
+
         if feedback and i % 5 == 0:
             # CORREÇÃO: Removido 'distance_remaining' que não existe no FollowWaypoints
             print(f"🔄 Executando Waypoint {feedback.current_waypoint + 1} de {len(waypoints)}")
-            
+
         result = navigator.getResult()
         if result == TaskResult.SUCCEEDED:
             print('\n🎉 Rota Finalizada com Sucesso!')
@@ -101,10 +103,11 @@ def main():
         elif result == TaskResult.FAILED:
             print('\n❌ Falha na rota!')
             break
-            
+
         time.sleep(0.5)
 
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

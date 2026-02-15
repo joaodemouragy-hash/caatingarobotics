@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+from datetime import datetime, timezone
 import json
 import math
 import os
@@ -9,11 +10,10 @@ import shutil
 import sys
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
 
-import rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
+import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, String
 
@@ -204,15 +204,23 @@ class RastreabilidadeNode(Node):
 
         if perfil_brasil_ou_universal:
             if not (self.farm_gln.isdigit() and len(self.farm_gln) == 13):
-                erros.append("GLN inválido: deve conter exatamente 13 dígitos para perfil Brasil/Universal.")
+                erros.append(
+                    "GLN inválido: deve conter exatamente 13 dígitos para perfil Brasil/Universal."
+                )
             if _is_missing_or_placeholder(self.epc):
                 erros.append("EPC é obrigatório para perfil Brasil/Universal.")
 
         if perfil_brasil_ou_universal and self.event_type == "CHEMICAL_APPLICATION":
             if _is_missing_or_placeholder(self.produto_nome):
-                erros.append("Produto químico é obrigatório para aplicação química no perfil Brasil/Universal.")
+                erros.append(
+                    "Produto químico é obrigatório para aplicação química "
+                    "no perfil Brasil/Universal."
+                )
             if _is_missing_or_placeholder(self.registro_mapa):
-                erros.append("Registro MAPA é obrigatório para aplicação química no perfil Brasil/Universal.")
+                erros.append(
+                    "Registro MAPA é obrigatório para aplicação química "
+                    "no perfil Brasil/Universal."
+                )
 
         return erros
 
@@ -230,7 +238,10 @@ class RastreabilidadeNode(Node):
             )
             self.get_logger().info("Rastreabilidade usando /odom")
             return
-        if "/amcl_pose" in topics and "geometry_msgs/msg/PoseWithCovarianceStamped" in topics["/amcl_pose"]:
+        if (
+            "/amcl_pose" in topics
+            and "geometry_msgs/msg/PoseWithCovarianceStamped" in topics["/amcl_pose"]
+        ):
             self.subscription = self.create_subscription(
                 PoseWithCovarianceStamped, "/amcl_pose", self.listener_callback_amcl, 10
             )
@@ -274,7 +285,9 @@ class RastreabilidadeNode(Node):
         litros_baseline = _to_float(status.get("litros_baseline_l"), 0.0)
         litros_spot = _to_float(status.get("litros_spot_l"), 0.0)
         litros_economizados = max(_to_float(status.get("litros_economizados_l"), 0.0), 0.0)
-        spray_recommendation = bool(status.get("spray_recommendation", self.ia_spray_recommendation))
+        spray_recommendation = bool(
+            status.get("spray_recommendation", self.ia_spray_recommendation)
+        )
         class_counts = status.get("class_counts", {})
         if isinstance(class_counts, dict):
             class_counts = {str(k): int(_to_float(v, 0.0)) for k, v in class_counts.items()}
@@ -400,7 +413,7 @@ class RastreabilidadeNode(Node):
         self._process_xy(msg.pose.pose.position.x, msg.pose.pose.position.y)
 
     def _convex_hull(self, points):
-        pts = sorted(set((float(x), float(y)) for x, y in points))
+        pts = sorted({(float(x), float(y)) for x, y in points})
         if len(pts) <= 1:
             return pts
 
@@ -567,7 +580,9 @@ class RastreabilidadeNode(Node):
             "model_names": model_names,
             "class_source": _safe_text(status.get("class_source"), "desconhecida"),
             "class_counts": class_counts,
-            "unmapped_detections_total": int(_to_float(status.get("unmapped_detections_total"), 0.0)),
+            "unmapped_detections_total": int(
+                _to_float(status.get("unmapped_detections_total"), 0.0)
+            ),
             "unmapped_labels": unmapped,
             "doenca_dominante": _safe_text(status.get("doenca_dominante"), "Nao_Detectada"),
             "deteccoes_total": int(_to_float(status.get("deteccoes_total"), 0.0)),
@@ -623,7 +638,11 @@ class RastreabilidadeNode(Node):
 
     def _build_brasil_event_json(self, end_dt_utc):
         quantidade_l = round(max(self.volume_aplicado_total, 0.0), 3)
-        quantidade_l = quantidade_l if quantidade_l > 0 else round(max(self.volume_inicial_total, 0.0), 3)
+        quantidade_l = (
+            quantidade_l
+            if quantidade_l > 0
+            else round(max(self.volume_inicial_total, 0.0), 3)
+        )
         return {
             "event_type": self.event_type,
             "epc": self.epc,
@@ -687,7 +706,11 @@ class RastreabilidadeNode(Node):
 
     def _build_taskdata_xml(self, end_dt_utc):
         root = ET.Element("TASKDATA", attrib={"Version": "1.0", "DataTransferOrigin": "Robot"})
-        task = ET.SubElement(root, "TSK", attrib={"TaskID": f"TSK-{self.start_time_tag}", "Type": self.event_type})
+        task = ET.SubElement(
+            root,
+            "TSK",
+            attrib={"TaskID": f"TSK-{self.start_time_tag}", "Type": self.event_type},
+        )
         ET.SubElement(
             task,
             "TIM",
@@ -770,7 +793,10 @@ class RastreabilidadeNode(Node):
                 writer.writerow(headers)
                 for row in self.csv_data:
                     row_ptbr = list(row)
-                    precisao = {1: 6, 2: 6, 6: 3, 7: 3, 8: 3, 9: 3, 10: 3, 13: 4, 16: 4, 17: 4, 18: 4}
+                    precisao = {
+                        1: 6, 2: 6, 6: 3, 7: 3, 8: 3, 9: 3, 10: 3, 13: 4, 16: 4,
+                        17: 4, 18: 4,
+                    }
                     for idx, decimals in precisao.items():
                         row_ptbr[idx] = _format_ptbr_decimal(row_ptbr[idx], decimals)
                     writer.writerow(row_ptbr)
@@ -815,7 +841,11 @@ class RastreabilidadeNode(Node):
 
         arquivos_gerados.extend(self._save_csv_or_summary(output_dir))
 
-        for extra_name in ("inspecao_ia.csv", "heatmap_infestacao.geojson", "ia_status_final.json"):
+        for extra_name in (
+            "inspecao_ia.csv",
+            "heatmap_infestacao.geojson",
+            "ia_status_final.json",
+        ):
             extra_path = os.path.join(output_dir, extra_name)
             if os.path.exists(extra_path):
                 arquivos_gerados.append(extra_path)
@@ -851,7 +881,11 @@ class RastreabilidadeNode(Node):
         legacy_base = f"Relatorio_Certificacao_{self.start_time_tag}"
         legacy_geojson_path = os.path.join(self.log_dir, f"{legacy_base}.geojson")
         legacy_txt_path = os.path.join(self.log_dir, f"{legacy_base}.txt")
-        legacy_geojson = self._build_eudr_geojson(polygon_coords, area_ha) if self.perfil in ("universal", "ue") else track_geojson
+        legacy_geojson = (
+            self._build_eudr_geojson(polygon_coords, area_ha)
+            if self.perfil in ("universal", "ue")
+            else track_geojson
+        )
         with open(legacy_geojson_path, "w", encoding="utf-8") as f:
             json.dump(legacy_geojson, f, indent=2, ensure_ascii=False)
         with open(legacy_txt_path, "w", encoding="utf-8") as f:
@@ -886,12 +920,18 @@ class RastreabilidadeNode(Node):
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(description="Gerador de pacote de rastreabilidade (UE + Brasil)")
+    parser = argparse.ArgumentParser(
+        description="Gerador de pacote de rastreabilidade (UE + Brasil)"
+    )
     parser.add_argument("--produto", default="Nao_Informado")
     parser.add_argument("--agua", default="50.0")
     parser.add_argument("--dose", default="0")
     parser.add_argument("--registro_mapa", default="Nao_Informado")
-    parser.add_argument("--perfil", default="universal", choices=["universal", "ue", "brasil", "operacional"])
+    parser.add_argument(
+        "--perfil",
+        default="universal",
+        choices=["universal", "ue", "brasil", "operacional"],
+    )
     parser.add_argument("--farm_gln", default="7890000012345")
     parser.add_argument("--epc", default="NAO_INFORMADO")
     parser.add_argument("--robot_uuid", default="AGRI-BOT-X99")
@@ -901,7 +941,10 @@ def parse_args(argv):
     parser.add_argument("--session_id", default="")
     parser.add_argument("--ia_enabled", default="false")
     parser.add_argument("--ia_status_topic", default="/caatinga_vision/infestation/status")
-    parser.add_argument("--ia_recommendation_topic", default="/caatinga_vision/spray/recommendation")
+    parser.add_argument(
+        "--ia_recommendation_topic",
+        default="/caatinga_vision/spray/recommendation",
+    )
     return parser.parse_args(argv)
 
 

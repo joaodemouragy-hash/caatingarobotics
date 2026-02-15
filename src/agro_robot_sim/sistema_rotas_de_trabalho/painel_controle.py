@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
-import sys
-import os
-import signal
-import subprocess
-import shutil
-import time
-import re
-import shlex
-import site
+import base64
 import csv
+from glob import glob
 import json
 import math
+import os
 import random
-import base64
-import threading
+import re
+import shlex
+import shutil
+import signal
+import site
+import subprocess
+import sys
 import tempfile
+import threading
+import time
 import zipfile
-from glob import glob
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QPushButton, QLabel, QListWidget, 
-                             QFrame, QMessageBox, QTextEdit, QTabWidget, QProgressBar, 
-                             QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QLineEdit,
-                             QDialog, QDialogButtonBox, QListWidgetItem, QGridLayout,
-                             QTreeWidget, QTreeWidgetItem, QInputDialog, QFileDialog)
-from PyQt5.QtGui import QFont, QColor, QTextCursor, QPixmap
-from PyQt5.QtCore import Qt, QProcess, QTimer, QUrl, QThread, pyqtSignal, QEventLoop
+from PyQt5.QtCore import QEventLoop, QProcess, Qt, QThread, QTimer, QUrl, pyqtSignal
+from PyQt5.QtGui import QColor, QFont, QPixmap, QTextCursor
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
+                             QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFrame,
+                             QGridLayout, QHBoxLayout, QInputDialog, QLabel,
+                             QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
+                             QMessageBox, QProgressBar, QPushButton, QSpinBox,
+                             QTabWidget, QTextEdit, QTreeWidget, QTreeWidgetItem,
+                             QVBoxLayout, QWidget)
 
 WEBENGINE_ERROR = ""
 try:
@@ -38,6 +39,7 @@ except Exception as e:
 
 # Configuração gráfica para Linux
 os.environ["QT_QPA_PLATFORM"] = "xcb"
+
 
 class SensorTopViewPanel(QWidget):
     def __init__(self, parent=None):
@@ -79,7 +81,10 @@ class SensorTopViewPanel(QWidget):
         diagram_layout.setVerticalSpacing(10)
 
         lbl_orient = QLabel("FRENTE ↑")
-        lbl_orient.setStyleSheet("color: #cfd8dc; font-size: 11px; font-weight: bold; border: 0px;")
+        lbl_orient.setStyleSheet((
+            "color: #cfd8dc; font-size: 11px; font-weight: bold; border:"
+            "0px;"
+        ))
         lbl_orient.setAlignment(Qt.AlignCenter)
         diagram_layout.addWidget(lbl_orient, 0, 1, 1, 1)
 
@@ -275,14 +280,17 @@ class AgroRobotGUI(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Caatinga Robotics - Central de Comando")
-        self.setGeometry(0, 0, 950, 850) 
-        self.setStyleSheet("background-color: #212121; color: white;") 
+        self.setGeometry(0, 0, 950, 850)
+        self.setStyleSheet("background-color: #212121; color: white;")
 
         # --- Caminhos ---
         self.home = os.path.expanduser("~")
         self.workspace = os.path.join(self.home, 'agro_robot_ws')
-        self.base_path = os.path.join(self.workspace, 'src/agro_robot_sim/sistema_rotas_de_trabalho')
-        
+        self.base_path = os.path.join(
+            self.workspace,
+            'src/agro_robot_sim/sistema_rotas_de_trabalho',
+        )
+
         self.path_rotas = os.path.join(self.base_path, 'rotas_de_trabalho')
         self.script_gravador = os.path.join(self.base_path, 'gravador_rotas.py')
         self.script_leitor = os.path.join(self.base_path, 'leitor_rotas.py')
@@ -293,16 +301,21 @@ class AgroRobotGUI(QMainWindow):
             self.workspace, "src", "caatinga_vision", "caatinga_vision", "photo_capture_node.py"
         )
         self.exec_photo_capture = os.path.join(
-            self.workspace, "install", "caatinga_vision", "lib", "caatinga_vision", "photo_capture_node"
+            self.workspace,
+            "install",
+            "caatinga_vision",
+            "lib",
+            "caatinga_vision",
+            "photo_capture_node",
         )
         self.garagem_path = os.path.join(self.base_path, 'garagem.csv')
         self.dataset_root = os.path.join(self.workspace, "datasets", "agro_v1")
         self.dataset_data_yaml = os.path.join(self.dataset_root, "data.yaml")
 
         self.image_path = os.path.join(self.base_path, 'logoca.png')
-        
-        self.processos = {} 
-        self.suporte_ativo = False 
+
+        self.processos = {}
+        self.suporte_ativo = False
 
         self.robot_lat = -5.842658269190423
         self.robot_lon = -40.70602809847952
@@ -411,7 +424,7 @@ class AgroRobotGUI(QMainWindow):
         # --- LOGO ---
         lbl_logo = QLabel()
         lbl_logo.setAlignment(Qt.AlignCenter)
-        lbl_logo.setStyleSheet("margin-bottom: 10px; margin-top: 10px;") 
+        lbl_logo.setStyleSheet("margin-bottom: 10px; margin-top: 10px;")
         pixmap = QPixmap(self.image_path)
         if not pixmap.isNull():
             scaled_pixmap = pixmap.scaledToWidth(140, Qt.SmoothTransformation)
@@ -462,10 +475,11 @@ class AgroRobotGUI(QMainWindow):
         left_layout.addWidget(lbl_impl)
 
         self.combo_implemento = QComboBox()
-        self.combo_implemento.setStyleSheet("""
-            QComboBox { background-color: #444; color: white; padding: 8px; border: 1px solid #555; font-weight: bold; }
-            QComboBox QAbstractItemView { background-color: #333; color: white; }
-        """)
+        self.combo_implemento.setStyleSheet(
+            "QComboBox { background-color: #444; color: white; padding: 8px; "
+            "border: 1px solid #555; font-weight: bold; }"
+            "QComboBox QAbstractItemView { background-color: #333; color: white; }"
+        )
         # Define as opções
         self.combo_implemento.addItems([
             "✂️ Roçadeira (Corte de Mato)",
@@ -480,11 +494,13 @@ class AgroRobotGUI(QMainWindow):
         # ----------------------------------------
 
         self.tabs_left = QTabWidget()
-        self.tabs_left.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid #444; border-radius: 6px; background: #2a2a2a; }
-            QTabBar::tab { background: #323232; color: #cfd8dc; padding: 8px 12px; font-weight: bold; }
-            QTabBar::tab:selected { background: #455a64; color: #ffffff; }
-        """)
+        self.tabs_left.setStyleSheet(
+            "QTabWidget::pane { border: 1px solid #444; border-radius: 6px; "
+            "background: #2a2a2a; }"
+            "QTabBar::tab { background: #323232; color: #cfd8dc; padding: 8px 12px; "
+            "font-weight: bold; }"
+            "QTabBar::tab:selected { background: #455a64; color: #ffffff; }"
+        )
         left_layout.addWidget(self.tabs_left, 1)
 
         tab_rotas = QWidget()
@@ -497,7 +513,9 @@ class AgroRobotGUI(QMainWindow):
         tab_rotas_layout.addWidget(lbl_r)
 
         self.lista_rotas = QListWidget()
-        self.lista_rotas.setStyleSheet("background-color: #444; color: white; border: 1px solid #555;")
+        self.lista_rotas.setStyleSheet(
+            "background-color: #444; color: white; border: 1px solid #555;"
+        )
         self.atualizar_lista_rotas()
         tab_rotas_layout.addWidget(self.lista_rotas)
 
@@ -507,7 +525,7 @@ class AgroRobotGUI(QMainWindow):
         btn_ref.setStyleSheet("background-color: #555; color: white;")
         btn_ref.clicked.connect(self.atualizar_lista_rotas)
         hbox.addWidget(btn_ref)
-        
+
         self.btn_exec = QPushButton("▶️ Executar")
         self.estilizar_botao(self.btn_exec, "#2e7d32")
         self.btn_exec.clicked.connect(self.executar_rota)
@@ -532,7 +550,10 @@ class AgroRobotGUI(QMainWindow):
         tab_impl_layout.addWidget(self.lbl_impl_sem_config)
 
         self.frame_tanque = QFrame()
-        self.frame_tanque.setStyleSheet("background-color: #2a2a2a; border: 1px solid #444; border-radius: 5px; margin-top: 6px;")
+        self.frame_tanque.setStyleSheet((
+            "background-color: #2a2a2a; border: 1px solid #444;"
+            "border-radius: 5px; margin-top: 6px;"
+        ))
         layout_tanque = QVBoxLayout(self.frame_tanque)
 
         lbl_tank = QLabel("🛢️ Configuração da Calda (UE):")
@@ -572,7 +593,10 @@ class AgroRobotGUI(QMainWindow):
         self.spin_agua.setRange(0.0, 100.0)
         self.spin_agua.setValue(50.0)
         self.spin_agua.setSingleStep(1.0)
-        self.spin_agua.setStyleSheet("background-color: #444; padding: 3px; color: #00ffff; font-weight: bold; border: 0px;")
+        self.spin_agua.setStyleSheet((
+            "background-color: #444; padding: 3px; color: #00ffff;"
+            "font-weight: bold; border: 0px;"
+        ))
         v_agua.addWidget(lbl_agua)
         v_agua.addWidget(self.spin_agua)
 
@@ -584,7 +608,10 @@ class AgroRobotGUI(QMainWindow):
         self.spin_dose.setRange(0, 5000)
         self.spin_dose.setValue(0)
         self.spin_dose.setSingleStep(10)
-        self.spin_dose.setStyleSheet("background-color: #444; padding: 3px; color: #ffeb3b; font-weight: bold; border: 0px;")
+        self.spin_dose.setStyleSheet((
+            "background-color: #444; padding: 3px; color: #ffeb3b;"
+            "font-weight: bold; border: 0px;"
+        ))
         v_dose.addWidget(lbl_dose)
         v_dose.addWidget(self.spin_dose)
 
@@ -648,7 +675,9 @@ class AgroRobotGUI(QMainWindow):
         bateria_layout.addWidget(self.battery_bar)
 
         self.lbl_battery_percent = QLabel("80%")
-        self.lbl_battery_percent.setStyleSheet("color: #4caf50; font-weight: bold; min-width: 32px;")
+        self.lbl_battery_percent.setStyleSheet(
+            "color: #4caf50; font-weight: bold; min-width: 32px;"
+        )
         self.lbl_battery_percent.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         bateria_layout.addWidget(self.lbl_battery_percent)
 
@@ -759,7 +788,7 @@ class AgroRobotGUI(QMainWindow):
         self.log_console.setReadOnly(True)
         self.log_console.setStyleSheet("""
             QTextEdit {
-                background-color: #111; color: #00ff00; 
+                background-color: #111; color: #00ff00;
                 font-family: Monospace; font-size: 12px;
                 border: 1px solid #444; border-radius: 5px;
             }
@@ -767,7 +796,10 @@ class AgroRobotGUI(QMainWindow):
         logs_layout.addWidget(self.log_console)
 
         self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet("QProgressBar { border: 0px; background: #444; height: 10px; } QProgressBar::chunk { background: #4caf50; }")
+        self.progress_bar.setStyleSheet((
+            "QProgressBar { border: 0px; background: #444; height: 10px; }"
+            "QProgressBar::chunk { background: #4caf50; }"
+        ))
         self.progress_bar.hide()
         logs_layout.addWidget(self.progress_bar)
 
@@ -833,9 +865,12 @@ class AgroRobotGUI(QMainWindow):
             "}"
             "QPushButton:hover { background-color: #546e7a; border: 1px solid #90a4ae; }"
             "QPushButton:pressed { background-color: #37474f; }"
-            "QPushButton:disabled { background-color: #2e3a44; color: #9e9e9e; border: 1px solid #455a64; }"
+            "QPushButton:disabled { background-color: #2e3a44; color: "
+            "#9e9e9e; border: 1px solid #455a64; }"
         )
-        self.btn_ros_nodes_refresh.clicked.connect(lambda *_: self.atualizar_nos_ros_publicadores(forcar=True))
+        self.btn_ros_nodes_refresh.clicked.connect(
+            lambda *_: self.atualizar_nos_ros_publicadores(forcar=True)
+        )
         ros_nodes_top.addWidget(self.btn_ros_nodes_refresh)
 
         self.btn_ros_nodes_export = QPushButton("Exportar")
@@ -851,7 +886,8 @@ class AgroRobotGUI(QMainWindow):
             "}"
             "QPushButton:hover { background-color: #388e3c; border: 1px solid #66bb6a; }"
             "QPushButton:pressed { background-color: #1b5e20; }"
-            "QPushButton:disabled { background-color: #2d3a2f; color: #9e9e9e; border: 1px solid #455a64; }"
+            "QPushButton:disabled { background-color: #2d3a2f; color: "
+            "#9e9e9e; border: 1px solid #455a64; }"
         )
         self.btn_ros_nodes_export.clicked.connect(self.exportar_nos_ros_publicadores)
         ros_nodes_top.addWidget(self.btn_ros_nodes_export)
@@ -866,7 +902,8 @@ class AgroRobotGUI(QMainWindow):
         self.tree_ros_nodes.setWordWrap(False)
         self.tree_ros_nodes.setStyleSheet(
             "QTreeWidget { background-color: #151515; border: 1px solid #333; color: #eceff1; }"
-            "QHeaderView::section { background-color: #263238; color: #ffffff; padding: 4px; border: 0px; font-weight: bold; }"
+            "QHeaderView::section { background-color: #263238; color: "
+            "#ffffff; padding: 4px; border: 0px; font-weight: bold; }"
             "QTreeWidget::item { height: 26px; }"
             "QTreeWidget::item:selected { background-color: #37474f; }"
         )
@@ -907,8 +944,9 @@ class AgroRobotGUI(QMainWindow):
         self.combo_ia_conf_mode = QComboBox()
         self.combo_ia_conf_mode.addItems(["Econômico (85%)", "Conservador (50%)"])
         self.combo_ia_conf_mode.setStyleSheet(
-            "QComboBox { background-color: #444; color: white; padding: 6px; border: 1px solid #555; font-weight: bold; }"
-            "QComboBox QAbstractItemView { background-color: #333; color: white; }"
+                "QComboBox { background-color: #444; color: white; padding:"
+                "6px; border: 1px solid #555; font-weight: bold; }"
+                "QComboBox QAbstractItemView { background-color: #333; color: white; }"
         )
         cfg_ia_layout.addWidget(self.combo_ia_conf_mode, 1)
         saude_ia_layout.addLayout(cfg_ia_layout)
@@ -943,8 +981,10 @@ class AgroRobotGUI(QMainWindow):
         cfg_ia_thr_layout.addWidget(self.spin_ia_thr_econ)
         self.btn_ia_preset_teste = QPushButton("Preset Teste Sensível")
         self.btn_ia_preset_teste.setStyleSheet(
-            "QPushButton { background-color: #455a64; color: #eceff1; padding: 6px 10px; border-radius: 6px; border: 1px solid #607d8b; }"
-            "QPushButton:hover { background-color: #546e7a; }"
+                "QPushButton { background-color: #455a64; color: #eceff1;"
+                "padding: 6px 10px; border-radius: 6px; border: 1px solid"
+                "#607d8b; }"
+                "QPushButton:hover { background-color: #546e7a; }"
         )
         self.btn_ia_preset_teste.clicked.connect(self._aplicar_preset_teste_sensivel)
         cfg_ia_thr_layout.addWidget(self.btn_ia_preset_teste)
@@ -1043,7 +1083,10 @@ class AgroRobotGUI(QMainWindow):
         treino_ia_layout.addWidget(self.input_treino_data_yaml)
 
         self.input_treino_model_path = QLineEdit("yolo11n.pt")
-        self.input_treino_model_path.setPlaceholderText("Modelo YOLO para treino (ex.: yolo11n.pt ou /caminho/modelo.pt)")
+        self.input_treino_model_path.setPlaceholderText((
+            "Modelo YOLO para treino (ex.: yolo11n.pt ou"
+            "/caminho/modelo.pt)"
+        ))
         self.input_treino_model_path.setStyleSheet(
             "background-color: #444; padding: 6px; color: #ffffff; border: 1px solid #555;"
         )
@@ -1084,8 +1127,9 @@ class AgroRobotGUI(QMainWindow):
         self.combo_treino_device = QComboBox()
         self.combo_treino_device.addItems(["cpu", "0"])
         self.combo_treino_device.setStyleSheet(
-            "QComboBox { background-color: #444; color: white; padding: 4px; border: 1px solid #555; font-weight: bold; }"
-            "QComboBox QAbstractItemView { background-color: #333; color: white; }"
+                "QComboBox { background-color: #444; color: white; padding:"
+                "4px; border: 1px solid #555; font-weight: bold; }"
+                "QComboBox QAbstractItemView { background-color: #333; color: white; }"
         )
         treino_cfg_grid.addWidget(self.combo_treino_device, 1, 3)
         treino_ia_layout.addLayout(treino_cfg_grid)
@@ -1196,8 +1240,9 @@ class AgroRobotGUI(QMainWindow):
         self.combo_capture_resolution.addItems(["640x480", "1280x720", "1920x1080"])
         self.combo_capture_resolution.setCurrentText("1280x720")
         self.combo_capture_resolution.setStyleSheet(
-            "QComboBox { background-color: #444; color: white; padding: 4px; border: 1px solid #555; font-weight: bold; }"
-            "QComboBox QAbstractItemView { background-color: #333; color: white; }"
+                "QComboBox { background-color: #444; color: white; padding:"
+                "4px; border: 1px solid #555; font-weight: bold; }"
+                "QComboBox QAbstractItemView { background-color: #333; color: white; }"
         )
         cfg_capture.addWidget(self.combo_capture_resolution, 1, 1)
 
@@ -1293,26 +1338,40 @@ class AgroRobotGUI(QMainWindow):
         lbl_links.setStyleSheet("color: #b0bec5; font-size: 11px; margin-top: 6px;")
         rast_layout.addWidget(lbl_links)
 
-        lbl_link_gln = QLabel('<a href="https://www.gs1br.org/gln">GLN (13 dígitos) - página oficial GS1 Brasil</a>')
+        lbl_link_gln = QLabel((
+            '<a href="https://www.gs1br.org/gln">GLN (13 dígitos) - página'
+            'oficial GS1 Brasil</a>'
+        ))
         lbl_link_gln.setOpenExternalLinks(True)
         lbl_link_gln.setTextInteractionFlags(Qt.TextBrowserInteraction)
         lbl_link_gln.setStyleSheet("color: #90caf9; font-size: 11px;")
         rast_layout.addWidget(lbl_link_gln)
 
-        lbl_link_epc = QLabel('<a href="https://www.gs1br.org/epc-rfid">EPC/RFID - como funciona e como implementar</a>')
+        lbl_link_epc = QLabel((
+            '<a href="https://www.gs1br.org/epc-rfid">EPC/RFID - como'
+            'funciona e como implementar</a>'
+        ))
         lbl_link_epc.setOpenExternalLinks(True)
         lbl_link_epc.setTextInteractionFlags(Qt.TextBrowserInteraction)
         lbl_link_epc.setStyleSheet("color: #90caf9; font-size: 11px;")
         rast_layout.addWidget(lbl_link_epc)
 
-        lbl_link_assoc = QLabel('<a href="https://www.gs1br.org/solicitar-codigo-de-barras">Filiação GS1 (necessária para emitir padrões oficiais)</a>')
+        lbl_link_assoc = QLabel((
+            '<a'
+            'href="https://www.gs1br.org/solicitar-codigo-de-barras">Filiação'
+            'GS1 (necessária para emitir padrões oficiais)</a>'
+        ))
         lbl_link_assoc.setOpenExternalLinks(True)
         lbl_link_assoc.setTextInteractionFlags(Qt.TextBrowserInteraction)
         lbl_link_assoc.setStyleSheet("color: #90caf9; font-size: 11px;")
         rast_layout.addWidget(lbl_link_assoc)
 
-        self.chk_rastreabilidade = QCheckBox("Gerar Pacote Universal de Rastreabilidade (UE + Brasil)")
-        self.chk_rastreabilidade.setStyleSheet("color: #81c784; font-weight: bold; margin-top: 8px;")
+        self.chk_rastreabilidade = QCheckBox(
+            "Gerar Pacote Universal de Rastreabilidade (UE + Brasil)"
+        )
+        self.chk_rastreabilidade.setStyleSheet(
+            "color: #81c784; font-weight: bold; margin-top: 8px;"
+        )
         self.chk_rastreabilidade.setChecked(True)
         rast_layout.addWidget(self.chk_rastreabilidade)
 
@@ -1322,7 +1381,8 @@ class AgroRobotGUI(QMainWindow):
 
         self.combo_rastreabilidade_perfil = QComboBox()
         self.combo_rastreabilidade_perfil.setStyleSheet(
-            "QComboBox { background-color: #444; color: white; padding: 6px; border: 1px solid #555; font-weight: bold; }"
+            "QComboBox { background-color: #444; color: white; padding: "
+            "6px; border: 1px solid #555; font-weight: bold; }"
             "QComboBox QAbstractItemView { background-color: #333; color: white; }"
         )
         self.combo_rastreabilidade_perfil.addItems([
@@ -1331,7 +1391,9 @@ class AgroRobotGUI(QMainWindow):
             "Somente Brasil (PNRV/Brasil-ID)",
             "Operacional interno"
         ])
-        self.combo_rastreabilidade_perfil.currentTextChanged.connect(self.atualizar_campos_rastreabilidade_dinamicos)
+        self.combo_rastreabilidade_perfil.currentTextChanged.connect(
+            self.atualizar_campos_rastreabilidade_dinamicos
+        )
         rast_layout.addWidget(self.combo_rastreabilidade_perfil)
 
         self.lbl_gln = QLabel("GLN da fazenda (13 dígitos):")
@@ -1380,7 +1442,10 @@ class AgroRobotGUI(QMainWindow):
 
         line_rast_files = QFrame()
         line_rast_files.setFrameShape(QFrame.HLine)
-        line_rast_files.setStyleSheet("background-color: #3f3f3f; margin-top: 10px; margin-bottom: 6px;")
+        line_rast_files.setStyleSheet((
+            "background-color: #3f3f3f; margin-top: 10px; margin-bottom:"
+            "6px;"
+        ))
         rast_layout.addWidget(line_rast_files)
 
         lbl_rast_files = QLabel("Arquivos de rastreabilidade")
@@ -1401,7 +1466,9 @@ class AgroRobotGUI(QMainWindow):
             "QPushButton:hover { background-color: #388e3c; border: 1px solid #66bb6a; }"
             "QPushButton:pressed { background-color: #1b5e20; }"
         )
-        self.btn_exportar_pen_drive.clicked.connect(self.exportar_arquivos_rastreabilidade_pen_drive)
+        self.btn_exportar_pen_drive.clicked.connect(
+            self.exportar_arquivos_rastreabilidade_pen_drive
+        )
         rast_files_actions.addWidget(self.btn_exportar_pen_drive)
 
         self.btn_excluir_rastreabilidade = QPushButton("Excluir arquivos do sistema")
@@ -1415,7 +1482,9 @@ class AgroRobotGUI(QMainWindow):
             "QPushButton:hover { background-color: #c62828; border: 1px solid #ef9a9a; }"
             "QPushButton:pressed { background-color: #7f0000; }"
         )
-        self.btn_excluir_rastreabilidade.clicked.connect(self.excluir_arquivos_rastreabilidade_local)
+        self.btn_excluir_rastreabilidade.clicked.connect(
+            self.excluir_arquivos_rastreabilidade_local
+        )
         rast_files_actions.addWidget(self.btn_excluir_rastreabilidade)
 
         rast_layout.addLayout(rast_files_actions)
@@ -1435,7 +1504,7 @@ class AgroRobotGUI(QMainWindow):
         right_layout.addWidget(bateria_frame)
 
         main_layout.addLayout(right_layout)
-        
+
         # Chama uma vez para garantir o estado inicial correto
         self.atualizar_interface_tanque(abrir_aba=False)
         self.atualizar_campos_rastreabilidade_dinamicos()
@@ -1448,10 +1517,12 @@ class AgroRobotGUI(QMainWindow):
         self._ensure_dataset_dirs()
 
     def estilizar_botao(self, btn, cor):
-        btn.setStyleSheet(f"""
-            QPushButton {{ background-color: {cor}; color: white; font-weight: bold; padding: 12px; border-radius: 6px; font-size: 13px; }}
-            QPushButton:hover {{ background-color: {cor}; opacity: 0.9; border: 1px solid white; }}
-        """)
+        btn.setStyleSheet(
+            f"QPushButton {{ background-color: {cor}; color: white; font-weight: bold; "
+            "padding: 12px; border-radius: 6px; font-size: 13px; }"
+            f"QPushButton:hover {{ background-color: {cor}; opacity: 0.9; "
+            "border: 1px solid white; }"
+        )
 
     def estilizar_botao_destaque(self, btn, cor):
         btn.setStyleSheet(f"""
@@ -1537,7 +1608,10 @@ class AgroRobotGUI(QMainWindow):
             self.spin_ia_thr_cons.setValue(0.03)
         if hasattr(self, "spin_ia_thr_econ"):
             self.spin_ia_thr_econ.setValue(0.10)
-        self.log("[IA] Preset 'Teste Sensível' aplicado (conservador=0.03, econômico=0.10).", "#90caf9")
+        self.log(
+            "[IA] Preset 'Teste Sensível' aplicado (conservador=0.03, econômico=0.10).",
+            "#90caf9",
+        )
 
     def _resolver_modelo_ia_padrao(self):
         runs_root = os.path.join(self.workspace, "runs", "detect")
@@ -1669,9 +1743,13 @@ class AgroRobotGUI(QMainWindow):
 
         ident = {
             "model_path_abs": model_path_abs,
-            "model_mtime_ns": int(getattr(model_stat, "st_mtime_ns", int(model_stat.st_mtime * 1e9))),
+            "model_mtime_ns": int(
+                getattr(model_stat, "st_mtime_ns", int(model_stat.st_mtime * 1e9))
+            ),
             "data_yaml_path": self.dataset_data_yaml,
-            "data_yaml_mtime_ns": int(getattr(data_stat, "st_mtime_ns", int(data_stat.st_mtime * 1e9))),
+            "data_yaml_mtime_ns": int(
+                getattr(data_stat, "st_mtime_ns", int(data_stat.st_mtime * 1e9))
+            ),
         }
         return json.dumps(ident, ensure_ascii=False, sort_keys=True), ident, ""
 
@@ -1761,7 +1839,10 @@ class AgroRobotGUI(QMainWindow):
             )
         elif status == "ok":
             self.log(
-                f"[IA] Sanidade assíncrona concluída | session_id={session_id} | t_sanity_ms={elapsed_ms:.1f}",
+                (
+                    f"[IA] Sanidade assíncrona concluída | session_id={session_id} |"
+                    f"t_sanity_ms={elapsed_ms:.1f}"
+                ),
                 "#80cbc4",
             )
         else:
@@ -1800,7 +1881,8 @@ class AgroRobotGUI(QMainWindow):
             "    except Exception as e:\n"
             "        errors.append('yolo:' + str(e))\n"
             "if not names:\n"
-            "    raise RuntimeError(' ; '.join(errors) or 'nao foi possivel extrair classes do modelo')\n"
+            "raise RuntimeError(' ; '.join(errors) or 'nao foi possivel "
+            "extrair classes do modelo')\\n"
             "ordered = []\n"
             "if isinstance(names, dict):\n"
             "    items = []\n"
@@ -1835,7 +1917,10 @@ class AgroRobotGUI(QMainWindow):
                 "model_names": [],
             }
 
-        model_names, err_model = self._obter_classes_modelo_ia(model_path_abs, timeout_sec=timeout_sec)
+        model_names, err_model = self._obter_classes_modelo_ia(
+            model_path_abs,
+            timeout_sec=timeout_sec,
+        )
         if err_model:
             return {
                 "ok": False,
@@ -1853,7 +1938,8 @@ class AgroRobotGUI(QMainWindow):
         issues = []
         if len(norm_yaml) != len(norm_model):
             issues.append(
-                f"Quantidade de classes diferente (data.yaml={len(norm_yaml)} | modelo={len(norm_model)})."
+                    f"Quantidade de classes diferente (data.yaml={len(norm_yaml)} |"
+                    f"modelo={len(norm_model)})."
             )
 
         missing_in_model = [
@@ -1874,7 +1960,9 @@ class AgroRobotGUI(QMainWindow):
         mismatch_idx = []
         for idx in range(min(len(norm_yaml), len(norm_model))):
             if norm_yaml[idx] != norm_model[idx]:
-                mismatch_idx.append(f"{idx}:yaml='{names_yaml[idx]}' vs model='{model_names[idx]}'")
+                mismatch_idx.append(
+                    f"{idx}:yaml='{names_yaml[idx]}' vs model='{model_names[idx]}'"
+                )
         if mismatch_idx:
             issues.append("Ordem/índice divergente: " + " | ".join(mismatch_idx))
 
@@ -1920,7 +2008,8 @@ class AgroRobotGUI(QMainWindow):
             "conf = float(sys.argv[2])\n"
             "images = json.loads(sys.argv[3])\n"
             "model = YOLO(model_path)\n"
-            "stats = {'images_tested': 0, 'detections_total': 0, 'best_confidence': 0.0, 'per_image': []}\n"
+            "stats = {'images_tested': 0, 'detections_total': 0, "
+            "'best_confidence': 0.0, 'per_image': []}\\n"
             "for img_path in images:\n"
             "    r = model.predict(img_path, conf=conf, verbose=False, device='cpu')[0]\n"
             "    n = 0 if r.boxes is None else len(r.boxes)\n"
@@ -1930,7 +2019,8 @@ class AgroRobotGUI(QMainWindow):
             "    stats['images_tested'] += 1\n"
             "    stats['detections_total'] += int(n)\n"
             "    stats['best_confidence'] = max(float(stats['best_confidence']), best)\n"
-            "    stats['per_image'].append({'image': img_path, 'detections': int(n), 'best_confidence': best})\n"
+            "stats['per_image'].append({'image': img_path, 'detections': "
+            "int(n), 'best_confidence': best})\\n"
             "print(json.dumps(stats, ensure_ascii=False))\n"
         )
 
@@ -1948,8 +2038,16 @@ class AgroRobotGUI(QMainWindow):
                 "suggested_model_path": "",
             }
 
-        detections_total = int(payload.get("detections_total", 0)) if isinstance(payload, dict) else 0
-        best_conf = float(payload.get("best_confidence", 0.0)) if isinstance(payload, dict) else 0.0
+        detections_total = (
+            int(payload.get("detections_total", 0))
+            if isinstance(payload, dict)
+            else 0
+        )
+        best_conf = (
+            float(payload.get("best_confidence", 0.0))
+            if isinstance(payload, dict)
+            else 0.0
+        )
         weak = detections_total <= 0 or best_conf < 0.01
 
         suggested_last = ""
@@ -1961,7 +2059,8 @@ class AgroRobotGUI(QMainWindow):
         if weak:
             msg = (
                 "Modelo com baixa sanidade no teste rápido "
-                f"(imagens={payload.get('images_tested', 0)} | detecções={detections_total} | best_conf={best_conf:.4f})."
+                f"(imagens={payload.get('images_tested', 0)} | "
+                f"detecções={detections_total} | best_conf={best_conf:.4f})."
             )
             if suggested_last:
                 msg += f" Sugestão imediata: usar {suggested_last}"
@@ -1978,7 +2077,8 @@ class AgroRobotGUI(QMainWindow):
             "status": "ok",
             "message": (
                 "Sanidade do modelo OK "
-                f"(imagens={payload.get('images_tested', 0)} | detecções={detections_total} | best_conf={best_conf:.4f})."
+                f"(imagens={payload.get('images_tested', 0)} | "
+                f"detecções={detections_total} | best_conf={best_conf:.4f})."
             ),
             "stats": payload if isinstance(payload, dict) else {},
             "suggested_model_path": "",
@@ -2061,7 +2161,10 @@ class AgroRobotGUI(QMainWindow):
                 pass
 
         self.log(
-            f"[CAMERA] Encerrado(s) {len(pids)} processo(s) antigo(s) em {contexto}: {sorted(pids)}",
+            (
+                f"[CAMERA] Encerrado(s) {len(pids)} processo(s) antigo(s) em"
+                f"{contexto}: {sorted(pids)}"
+            ),
             "#ffb300",
         )
         return len(pids)
@@ -2121,9 +2224,17 @@ class AgroRobotGUI(QMainWindow):
             self._set_movimento_ativo(False)
             if hasattr(self, "btn_sistema"):
                 self.btn_sistema.setText("🚀 Ligar Sistema (Launch)")
-                self.btn_sistema.setStyleSheet(self.btn_sistema.styleSheet().replace("#444", "#e65100"))
+                self.btn_sistema.setStyleSheet(
+                    self.btn_sistema.styleSheet().replace("#444", "#e65100")
+                )
 
-    def _aguardar_analytics_ia_ativo(self, session_id, status_cache_path, mtime_min, timeout_sec=8.0):
+    def _aguardar_analytics_ia_ativo(
+        self,
+        session_id,
+        status_cache_path,
+        mtime_min,
+        timeout_sec=8.0,
+    ):
         timeout_sec = max(float(timeout_sec), 0.2)
         # Abertura do ros2 launch pode levar alguns segundos antes dos nós IA ficarem ativos.
         startup_grace_sec = max(timeout_sec + 4.0, 12.0)
@@ -2177,7 +2288,10 @@ class AgroRobotGUI(QMainWindow):
                                 _finish(True, "")
                                 return
                             if sid:
-                                last_error = f"Status IA pertence à sessão '{sid}', esperado '{session_id}'."
+                                last_error = (
+                                    f"Status IA pertence à sessão '{sid}', "
+                                    f"esperado '{session_id}'."
+                                )
                         else:
                             last_error = "Arquivo de status IA não contém JSON objeto válido."
             except Exception as e:
@@ -2189,7 +2303,8 @@ class AgroRobotGUI(QMainWindow):
                     if not last_error:
                         last_error = (
                             "Pipeline de IA não concluiu bootstrap em tempo hábil "
-                            f"({startup_grace_sec:.1f}s): nós camera/yolo/analytics não ficaram ativos."
+                            f"({startup_grace_sec:.1f}s): nós camera/yolo/analytics "
+                            "não ficaram ativos."
                         )
                     _finish(False, last_error)
                 return
@@ -2223,7 +2338,10 @@ class AgroRobotGUI(QMainWindow):
         self.ia_status_snapshot = {}
         self._ia_status_cache_mtime = 0.0
         self.ia_session_id = session_id
-        status_cache_path_session = os.path.join("/tmp", f"caatinga_vision_status_{session_id}.json")
+        status_cache_path_session = os.path.join(
+            "/tmp",
+            f"caatinga_vision_status_{session_id}.json",
+        )
         self.ia_status_cache_path_active = status_cache_path_session
         self.ia_status_cache_path = status_cache_path_session
         try:
@@ -2233,7 +2351,11 @@ class AgroRobotGUI(QMainWindow):
             pass
 
         confidence_mode = self.obter_modo_confianca_ia_codigo()
-        model_path = self.input_ia_model_path.text().strip() if hasattr(self, "input_ia_model_path") else ""
+        model_path = (
+            self.input_ia_model_path.text().strip()
+            if hasattr(self, "input_ia_model_path")
+            else ""
+        )
         if not model_path:
             suggested_model, _ = self._resolver_modelo_ia_padrao()
             if suggested_model:
@@ -2254,7 +2376,9 @@ class AgroRobotGUI(QMainWindow):
             QMessageBox.warning(self, "Saúde IA", msg)
             return False
 
-        preflight_key, preflight_ident, preflight_key_err = self._preflight_cache_key(model_path_abs)
+        preflight_key, preflight_ident, preflight_key_err = self._preflight_cache_key(
+            model_path_abs
+        )
         cache_hit = False
         cached_entry = None
         if preflight_key:
@@ -2294,10 +2418,14 @@ class AgroRobotGUI(QMainWindow):
                 compat.get("status") == "erro_modelo"
                 and "timeout" in str(compat.get("message", "")).lower()
             ):
-                # Primeiro acesso ao .pt pode demorar mais (I/O e load inicial do torch/ultralytics).
+                # Primeiro acesso ao .pt pode demorar mais (I/O e load inicial do
+                # torch/ultralytics).
                 compat_retry_timeout = True
                 self.log(
-                    "[IA] Validação inicial do modelo excedeu 10s; tentando novamente com timeout ampliado.",
+                    (
+                        "[IA] Validação inicial do modelo excedeu 10s; tentando"
+                        "novamente com timeout ampliado."
+                    ),
                     "#ffb74d",
                 )
                 compat = self._validar_modelo_vs_data_yaml(model_path_abs, timeout_sec=35)
@@ -2322,7 +2450,10 @@ class AgroRobotGUI(QMainWindow):
 
         if not compat.get("ok", False):
             compat_status = str(compat.get("status", "") or "")
-            compat_msg = str(compat.get("message", "Compatibilidade inválida.") or "Compatibilidade inválida.")
+            compat_msg = str(
+                compat.get("message", "Compatibilidade inválida.")
+                or "Compatibilidade inválida."
+            )
             if compat_status == "erro_modelo":
                 msg = (
                     f"Falha ao ler classes do modelo.\n\nModelo: {model_path_abs}\n"
@@ -2330,7 +2461,10 @@ class AgroRobotGUI(QMainWindow):
                     "Dica: aguarde alguns segundos e tente iniciar novamente."
                 )
             elif compat_status == "erro_data_yaml":
-                msg = f"Falha ao validar data.yaml.\n\nArquivo: {self.dataset_data_yaml}\n{compat_msg}"
+                msg = (
+                    f"Falha ao validar data.yaml.\\n\\nArquivo:"
+                    f"{self.dataset_data_yaml}\\n{compat_msg}"
+                )
             else:
                 msg = (
                     f"Modelo incompatível com data.yaml.\n\nModelo: {model_path_abs}\n"
@@ -2341,15 +2475,33 @@ class AgroRobotGUI(QMainWindow):
             return False
 
         model_names_json = json.dumps(compat.get("model_names", []), ensure_ascii=False)
-        model_names_b64 = base64.urlsafe_b64encode(model_names_json.encode("utf-8")).decode("ascii")
+        model_names_b64 = base64.urlsafe_b64encode(
+            model_names_json.encode("utf-8")
+        ).decode("ascii")
         sanity_cached_status_raw = str((cached_entry or {}).get("sanity_status", "") or "").strip()
-        sanity_cached_status = sanity_cached_status_raw if sanity_cached_status_raw not in ("", "pending_async") else ""
+        sanity_cached_status = (
+            sanity_cached_status_raw
+            if sanity_cached_status_raw not in ("", "pending_async")
+            else ""
+        )
         sanity_cached_ms = float((cached_entry or {}).get("sanity_elapsed_ms", 0.0) or 0.0)
         model_check_status = sanity_cached_status or "pending_async"
 
-        camera_index = int(self.spin_ia_camera_index.value()) if hasattr(self, "spin_ia_camera_index") else 0
-        thr_cons = float(self.spin_ia_thr_cons.value()) if hasattr(self, "spin_ia_thr_cons") else 0.50
-        thr_econ = float(self.spin_ia_thr_econ.value()) if hasattr(self, "spin_ia_thr_econ") else 0.85
+        camera_index = (
+            int(self.spin_ia_camera_index.value())
+            if hasattr(self, "spin_ia_camera_index")
+            else 0
+        )
+        thr_cons = (
+            float(self.spin_ia_thr_cons.value())
+            if hasattr(self, "spin_ia_thr_cons")
+            else 0.50
+        )
+        thr_econ = (
+            float(self.spin_ia_thr_econ.value())
+            if hasattr(self, "spin_ia_thr_econ")
+            else 0.85
+        )
         status_mtime_before = 0.0
         try:
             if os.path.exists(status_cache_path_session):
@@ -2393,7 +2545,9 @@ class AgroRobotGUI(QMainWindow):
                 self.log(
                     f"[IA] analytics_health=fail | cache_hit={str(cache_hit).lower()} | "
                     f"t_model_compat_ms={t_model_compat_ms:.1f} | t_sanity_ms={sanity_metric} | "
-                    f"t_pipeline_ready_ms={t_pipeline_ready_ms:.1f} | compat_retry_timeout={str(compat_retry_timeout).lower()} | {msg}",
+                    f"t_pipeline_ready_ms={t_pipeline_ready_ms:.1f} |"
+                    f"compat_retry_timeout={str(compat_retry_timeout).lower()} |"
+                    f"{msg}",
                     "#ff5555",
                 )
                 QMessageBox.warning(self, "Saúde IA", msg)
@@ -2416,7 +2570,8 @@ class AgroRobotGUI(QMainWindow):
             self.log(
                 f"[IA] Pipeline iniciado | session_id={session_id} | modo={confidence_mode} | "
                 f"model={model_path_abs} | analytics_health=ok | "
-                f"cache_hit={str(cache_hit).lower()} | t_model_compat_ms={t_model_compat_ms:.1f} | "
+                f"cache_hit={str(cache_hit).lower()} | "
+                f"t_model_compat_ms={t_model_compat_ms:.1f} | "
                 f"t_sanity_ms={sanity_metric} | t_pipeline_ready_ms={t_pipeline_ready_ms:.1f} | "
                 f"compat_retry_timeout={str(compat_retry_timeout).lower()}",
                 "#80cbc4",
@@ -2436,10 +2591,16 @@ class AgroRobotGUI(QMainWindow):
                 self.lbl_ia_feed.setPixmap(scaled)
                 self.lbl_ia_feed.setText("")
             elif self.lbl_ia_feed.pixmap() is None:
-                self.lbl_ia_feed.setText("Feed da IA indisponível.\nInicie uma rota com implemento IA.")
+                self.lbl_ia_feed.setText(
+                    "Feed da IA indisponível.\nInicie uma rota com implemento IA."
+                )
 
         try:
-            status_cache_path = getattr(self, "ia_status_cache_path_active", "") or self.ia_status_cache_path
+            status_cache_path = getattr(
+                self,
+                "ia_status_cache_path_active",
+                "",
+            ) or self.ia_status_cache_path
             if not os.path.exists(status_cache_path):
                 return
             stat = os.stat(status_cache_path)
@@ -2459,9 +2620,13 @@ class AgroRobotGUI(QMainWindow):
         if hasattr(self, "lbl_ia_pragas"):
             self.lbl_ia_pragas.setText(str(status.get("deteccoes_total", 0)))
         if hasattr(self, "lbl_ia_modo"):
-            self.lbl_ia_modo.setText(self._modo_confianca_ptbr(status.get("confidence_mode", "economico")))
+            self.lbl_ia_modo.setText(
+                self._modo_confianca_ptbr(status.get("confidence_mode", "economico"))
+            )
         if hasattr(self, "lbl_ia_doenca"):
-            self.lbl_ia_doenca.setText(self._doenca_ptbr(status.get("doenca_dominante", "Nao_Detectada")))
+            self.lbl_ia_doenca.setText(
+                self._doenca_ptbr(status.get("doenca_dominante", "Nao_Detectada"))
+            )
         if hasattr(self, "lbl_ia_nivel"):
             try:
                 self.lbl_ia_nivel.setText(f"{float(status.get('nivel_infestacao_m2', 0.0)):.4f}")
@@ -2474,9 +2639,13 @@ class AgroRobotGUI(QMainWindow):
             except Exception:
                 self.lbl_ia_litros.setText("0.000 L")
         if hasattr(self, "lbl_ia_recomendacao"):
-            self.lbl_ia_recomendacao.setText(self._bool_ptbr(status.get("spray_recommendation", False)))
+            self.lbl_ia_recomendacao.setText(
+                self._bool_ptbr(status.get("spray_recommendation", False))
+            )
         if hasattr(self, "lbl_ia_class_counts"):
-            self.lbl_ia_class_counts.setText(self._format_ia_class_counts(status.get("class_counts", {})))
+            self.lbl_ia_class_counts.setText(
+                self._format_ia_class_counts(status.get("class_counts", {}))
+            )
         if hasattr(self, "lbl_ia_unmapped"):
             unmapped_total = 0
             try:
@@ -2486,7 +2655,9 @@ class AgroRobotGUI(QMainWindow):
             if unmapped_total > 0:
                 details = self._format_ia_unmapped_labels(status.get("unmapped_labels", {}))
                 detail_txt = f" | {details}" if details else ""
-                self.lbl_ia_unmapped.setText(f"{unmapped_total} detecção(ões) não mapeada(s){detail_txt}")
+                self.lbl_ia_unmapped.setText(
+                    f"{unmapped_total} detecção(ões) não mapeada(s){detail_txt}"
+                )
                 self.lbl_ia_unmapped.setStyleSheet("color: #ff8a80; font-weight: bold;")
             else:
                 self.lbl_ia_unmapped.setText("Mapeamento OK")
@@ -2516,7 +2687,11 @@ class AgroRobotGUI(QMainWindow):
         return False
 
     def _current_session_id_treino(self):
-        session_id = self.input_treino_session_id.text().strip() if hasattr(self, "input_treino_session_id") else ""
+        session_id = (
+            self.input_treino_session_id.text().strip()
+            if hasattr(self, "input_treino_session_id")
+            else ""
+        )
         if not session_id:
             session_id = self._gerar_session_id()
         if not re.fullmatch(r"[A-Za-z0-9_.-]+", session_id):
@@ -2563,7 +2738,7 @@ class AgroRobotGUI(QMainWindow):
         for pattern in ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp"):
             files.extend(glob(os.path.join(directory, pattern)))
             files.extend(glob(os.path.join(directory, pattern.upper())))
-        return sorted(set([p for p in files if os.path.isfile(p)]))
+        return sorted({p for p in files if os.path.isfile(p)})
 
     def _safe_copy_with_suffix(self, src_path, dst_dir):
         os.makedirs(dst_dir, exist_ok=True)
@@ -2774,7 +2949,10 @@ class AgroRobotGUI(QMainWindow):
         images = data.get("images", [])
         annotations = data.get("annotations", [])
         categories = data.get("categories", [])
-        if not isinstance(images, list) or not isinstance(annotations, list) or not isinstance(categories, list):
+        if not isinstance(
+            images,
+            list,
+        ) or not isinstance(annotations, list) or not isinstance(categories, list):
             return None, f"Estrutura COCO inválida em {json_path}."
 
         image_map = {}
@@ -2893,7 +3071,8 @@ class AgroRobotGUI(QMainWindow):
                 cat_id = int(ann["category_id"])
                 if cat_id not in class_id_map:
                     return False, stats, (
-                        f"Categoria {cat_id} não mapeada durante conversão da imagem '{file_name}'."
+                            f"Categoria {cat_id} não mapeada durante conversão da imagem"
+                            f"'{file_name}'."
                     )
 
                 x, y, w, h = ann["bbox"]
@@ -3003,18 +3182,21 @@ class AgroRobotGUI(QMainWindow):
                 ok, detalhe = self._validate_label_format(lbl_path)
                 if not ok:
                     return False, {}, (
-                        f"Sessão '{session_id}', label '{os.path.basename(lbl_path)}' inválida: {detalhe}"
+                            f"Sessão '{session_id}', label '{os.path.basename(lbl_path)}'"
+                            f"inválida: {detalhe}"
                     )
                 try:
                     with open(lbl_path, "r", encoding="utf-8", errors="ignore") as f:
                         non_empty = [ln for ln in f.read().splitlines() if ln.strip()]
                 except Exception as e:
                     return False, {}, (
-                        f"Falha ao ler label '{os.path.basename(lbl_path)}' da sessão '{session_id}': {e}"
+                            f"Falha ao ler label '{os.path.basename(lbl_path)}' da sessão"
+                            f"'{session_id}': {e}"
                     )
                 if not non_empty:
                     return False, {}, (
-                        f"Label vazia detectada na sessão '{session_id}' ({os.path.basename(lbl_path)})."
+                            f"Label vazia detectada na sessão '{session_id}'"
+                            f"({os.path.basename(lbl_path)})."
                     )
 
                 pares.append((session_id, image_by_stem[stem], lbl_path))
@@ -3034,7 +3216,6 @@ class AgroRobotGUI(QMainWindow):
         if n_train + n_val > total:
             n_val = 1
             n_train = total - 1
-        n_test = total - n_train - n_val
 
         split_map = {
             "train": pares[:n_train],
@@ -3123,12 +3304,16 @@ class AgroRobotGUI(QMainWindow):
                     try:
                         class_id = int(parts[0])
                     except Exception:
-                        add_error(f"[{split}] class_id inválido em {os.path.basename(lbl_path)}:{i}")
+                        add_error((
+                            f"[{split}] class_id inválido em"
+                            f"{os.path.basename(lbl_path)}:{i}"
+                        ))
                         continue
                     if class_id < 0 or class_id >= class_count:
                         add_error(
-                            f"[{split}] class_id fora do intervalo em {os.path.basename(lbl_path)}:{i} "
-                            f"(id={class_id}, classes={class_count})"
+                                f"[{split}] class_id fora do intervalo em"
+                                f"{os.path.basename(lbl_path)}:{i} "
+                                f"(id={class_id}, classes={class_count})"
                         )
                     ann_split += 1
 
@@ -3291,11 +3476,15 @@ class AgroRobotGUI(QMainWindow):
                 if not ok_yaml:
                     raise RuntimeError(msg_yaml)
 
-                ok_rebuild, summary_rebuild, msg_rebuild = self._rebuild_split_from_all_raw_sessions()
+                ok_rebuild, summary_rebuild, msg_rebuild = (
+                    self._rebuild_split_from_all_raw_sessions()
+                )
                 if not ok_rebuild:
                     raise RuntimeError(msg_rebuild)
 
-                ok_strict, strict_errors, strict_summary = self._validar_dataset_para_treino_strict()
+                ok_strict, strict_errors, strict_summary = (
+                    self._validar_dataset_para_treino_strict()
+                )
                 if not ok_strict:
                     raise RuntimeError(
                         "Validação estrita falhou após importação: "
@@ -3309,16 +3498,24 @@ class AgroRobotGUI(QMainWindow):
                     "rebuild_split": summary_rebuild,
                     "strict_validation": strict_summary,
                 }
+                split_counts = (
+                    f"{summary_rebuild.get('train', 0)}/"
+                    f"{summary_rebuild.get('val', 0)}/"
+                    f"{summary_rebuild.get('test', 0)}"
+                )
                 self._log_treino_ia(
                     "Importação ZIP concluída | "
                     f"imagens={aggregate['images_total']} labels={aggregate['labels_total']} "
-                    f"classes={len(class_names)} split(train/val/test)="
-                    f"{summary_rebuild.get('train', 0)}/{summary_rebuild.get('val', 0)}/{summary_rebuild.get('test', 0)}",
+                    f"classes={len(class_names)} split(train/val/test)={split_counts}",
                     "#9ccc65",
                 )
                 self._set_treino_status(
-                    f"ZIP importado com sucesso. Sessão={session_id} | classes={len(class_names)} | "
-                    f"train={summary_rebuild.get('train', 0)} val={summary_rebuild.get('val', 0)}",
+                    (
+                        f"ZIP importado com sucesso. Sessão={session_id} | "
+                        f"classes={len(class_names)} | "
+                        f"train={summary_rebuild.get('train', 0)} "
+                        f"val={summary_rebuild.get('val', 0)}"
+                    ),
                     "#9ccc65",
                 )
                 QMessageBox.information(
@@ -3338,7 +3535,10 @@ class AgroRobotGUI(QMainWindow):
             self._limpar_diretorio(session_images_dir)
             self._limpar_diretorio(session_labels_dir)
             self._log_treino_ia(f"Falha na importação do ZIP: {erro}", "#ff5555")
-            self._set_treino_status("Falha ao importar ZIP. Verifique o relatório da sessão.", "#ff8a80")
+            self._set_treino_status(
+                "Falha ao importar ZIP. Verifique o relatório da sessão.",
+                "#ff8a80",
+            )
             QMessageBox.warning(self, "Treino IA", f"Falha ao importar ZIP:\n{erro}")
         finally:
             try:
@@ -3371,10 +3571,18 @@ class AgroRobotGUI(QMainWindow):
         img_files = self._list_image_files(images_src)
         lbl_files = sorted(glob(os.path.join(labels_src, "*.txt")))
         if not img_files:
-            QMessageBox.warning(self, "Treino IA", "Nenhuma imagem encontrada na pasta selecionada.")
+            QMessageBox.warning(
+                self,
+                "Treino IA",
+                "Nenhuma imagem encontrada na pasta selecionada.",
+            )
             return
         if not lbl_files:
-            QMessageBox.warning(self, "Treino IA", "Nenhum arquivo .txt de label encontrado na pasta selecionada.")
+            QMessageBox.warning(
+                self,
+                "Treino IA",
+                "Nenhum arquivo .txt de label encontrado na pasta selecionada.",
+            )
             return
 
         image_by_stem = {}
@@ -3431,7 +3639,8 @@ class AgroRobotGUI(QMainWindow):
                 ok, detalhe = self._validate_label_format(lbl_src)
                 if not ok:
                     raise RuntimeError(
-                        f"Label inválida na pasta importada ({os.path.basename(lbl_src)}): {detalhe}"
+                            f"Label inválida na pasta importada"
+                            f"({os.path.basename(lbl_src)}): {detalhe}"
                     )
                 with open(lbl_src, "r", encoding="utf-8", errors="ignore") as f:
                     non_empty = [ln for ln in f.read().splitlines() if ln.strip()]
@@ -3440,7 +3649,10 @@ class AgroRobotGUI(QMainWindow):
                         f"Label vazia não permitida ({os.path.basename(lbl_src)})."
                     )
 
-                img_dst, _dup = self._safe_copy_with_suffix(image_by_stem[stem], session_images_dir)
+                img_dst, _dup = self._safe_copy_with_suffix(
+                    image_by_stem[stem],
+                    session_images_dir,
+                )
                 stem_dst = os.path.splitext(os.path.basename(img_dst))[0]
                 lbl_dst = os.path.join(session_labels_dir, f"{stem_dst}.txt")
                 shutil.copy2(lbl_src, lbl_dst)
@@ -3464,7 +3676,11 @@ class AgroRobotGUI(QMainWindow):
                 },
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             }
-            with open(os.path.join(raw_session_dir, "import_report.json"), "w", encoding="utf-8") as f:
+            with open(
+                os.path.join(raw_session_dir, "import_report.json"),
+                "w",
+                encoding="utf-8",
+            ) as f:
                 json.dump(report, f, ensure_ascii=False, indent=2)
 
             self._log_treino_ia(
@@ -3496,7 +3712,11 @@ class AgroRobotGUI(QMainWindow):
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             }
             try:
-                with open(os.path.join(raw_session_dir, "import_report.json"), "w", encoding="utf-8") as f:
+                with open(
+                    os.path.join(raw_session_dir, "import_report.json"),
+                    "w",
+                    encoding="utf-8",
+                ) as f:
                     json.dump(report, f, ensure_ascii=False, indent=2)
             except Exception:
                 pass
@@ -3532,7 +3752,10 @@ class AgroRobotGUI(QMainWindow):
                 duplicated += 1
 
         self._log_treino_ia(
-            f"Upload de imagens concluído: {copied} arquivo(s) | duplicatas renomeadas: {duplicated} | sessão={session_id}",
+            (
+                f"Upload de imagens concluído: {copied} arquivo(s) | duplicatas"
+                f"renomeadas: {duplicated} | sessão={session_id}"
+            ),
             "#9ccc65",
         )
         self._set_treino_status(
@@ -3572,15 +3795,24 @@ class AgroRobotGUI(QMainWindow):
                 invalidos.append((os.path.basename(dst_path), detalhe))
 
         self._log_treino_ia(
-            f"Upload de labels concluído: {copied} arquivo(s) | duplicatas renomeadas: {duplicated}",
+            (
+                f"Upload de labels concluído: {copied} arquivo(s) | duplicatas"
+                f"renomeadas: {duplicated}"
+            ),
             "#9ccc65",
         )
         if invalidos:
             self._log_treino_ia(
-                f"Labels inválidos detectados: {len(invalidos)} (exemplo: {invalidos[0][0]} -> {invalidos[0][1]})",
+                (
+                    f"Labels inválidos detectados: {len(invalidos)} (exemplo:"
+                    f"{invalidos[0][0]} -> {invalidos[0][1]})"
+                ),
                 "#ffb300",
             )
-            self._set_treino_status("Upload concluído com alertas de formato em labels.", "#ffcc80")
+            self._set_treino_status(
+                "Upload concluído com alertas de formato em labels.",
+                "#ffcc80",
+            )
         else:
             self._set_treino_status(f"Labels da sessão em: {session_labels_dir}", "#9ccc65")
 
@@ -3629,7 +3861,10 @@ class AgroRobotGUI(QMainWindow):
 
         image_stems = [os.path.splitext(os.path.basename(p))[0] for p in img_files]
         missing_labels = sorted([stem for stem in image_stems if stem not in label_map])
-        labels_sem_img = sorted([stem for stem in label_map.keys() if stem not in set(image_stems)])
+        image_stems_set = set(image_stems)
+        labels_sem_img = sorted(
+            [stem for stem in label_map.keys() if stem not in image_stems_set]
+        )
         if missing_labels or labels_sem_img:
             detalhe = []
             if missing_labels:
@@ -3678,7 +3913,11 @@ class AgroRobotGUI(QMainWindow):
         confirm = QMessageBox.question(
             self,
             "Treino IA",
-            "Esta ação limpará os arquivos atuais de images/{train,val,test} e labels/{train,val,test}.\n\nDeseja continuar?",
+            (
+                "Esta ação limpará os arquivos atuais de"
+                "images/{train,val,test} e labels/{train,val,test}.\\n\\nDeseja"
+                "continuar?"
+            ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -3736,14 +3975,22 @@ class AgroRobotGUI(QMainWindow):
         )
         if has_mismatch and hasattr(self, "btn_treino_contagem"):
             self.btn_treino_contagem.setStyleSheet(
-                "QPushButton { background-color: #8e0000; color: white; font-weight: bold; padding: 12px; border-radius: 6px; font-size: 13px; }"
-                "QPushButton:hover { background-color: #b71c1c; border: 1px solid white; }"
+                    "QPushButton { background-color: #8e0000; color: white;"
+                    "font-weight: bold; padding: 12px; border-radius: 6px;"
+                    "font-size: 13px; }"
+                    "QPushButton:hover { background-color: #b71c1c; border: 1px solid white; }"
             )
-        elif hasattr(self, "btn_treino_contagem") and hasattr(self, "_btn_treino_contagem_default_style"):
+        elif hasattr(
+            self,
+            "btn_treino_contagem",
+        ) and hasattr(self, "_btn_treino_contagem_default_style"):
             self.btn_treino_contagem.setStyleSheet(self._btn_treino_contagem_default_style)
 
         resumo = " | ".join(
-            [f"{item['split']}: imgs={item['imgs']} lbls={item['lbls']} pares={item['pairs_ok']}" for item in contagens]
+            [(
+                f"{item['split']}: imgs={item['imgs']} lbls={item['lbls']}"
+                f"pares={item['pairs_ok']}"
+            ) for item in contagens]
         )
         self._log_treino_ia(
             f"Split 80/10/10 concluído ({total} imagens) | {resumo}",
@@ -3770,8 +4017,10 @@ class AgroRobotGUI(QMainWindow):
         lines = []
         for item in contagens:
             lines.append(
-                f"{item['split']}: imgs={item['imgs']} lbls={item['lbls']} pares={item['pairs_ok']} "
-                f"imgs_sem_label={len(item['imgs_sem_label'])} labels_sem_img={len(item['labels_sem_img'])}"
+                    f"{item['split']}: imgs={item['imgs']} lbls={item['lbls']}"
+                    f"pares={item['pairs_ok']} "
+                    f"imgs_sem_label={len(item['imgs_sem_label'])}"
+                    f"labels_sem_img={len(item['labels_sem_img'])}"
             )
 
         resumo = "\n".join(lines)
@@ -3781,8 +4030,10 @@ class AgroRobotGUI(QMainWindow):
         if has_mismatch:
             if hasattr(self, "btn_treino_contagem"):
                 self.btn_treino_contagem.setStyleSheet(
-                    "QPushButton { background-color: #8e0000; color: white; font-weight: bold; padding: 12px; border-radius: 6px; font-size: 13px; }"
-                    "QPushButton:hover { background-color: #b71c1c; border: 1px solid white; }"
+                        "QPushButton { background-color: #8e0000; color: white;"
+                        "font-weight: bold; padding: 12px; border-radius: 6px;"
+                        "font-size: 13px; }"
+                        "QPushButton:hover { background-color: #b71c1c; border: 1px solid white; }"
                 )
             self._set_treino_status("Contagem encontrou inconsistências de pareamento.", "#ff8a80")
             QMessageBox.warning(
@@ -3791,7 +4042,10 @@ class AgroRobotGUI(QMainWindow):
                 "Inconsistências detectadas entre imagens e labels.\n\n" + resumo,
             )
         else:
-            if hasattr(self, "btn_treino_contagem") and hasattr(self, "_btn_treino_contagem_default_style"):
+            if (
+                hasattr(self, "btn_treino_contagem")
+                and hasattr(self, "_btn_treino_contagem_default_style")
+            ):
                 self.btn_treino_contagem.setStyleSheet(self._btn_treino_contagem_default_style)
             self._set_treino_status("Contagem por split validada sem inconsistências.", "#9ccc65")
             QMessageBox.information(
@@ -3801,7 +4055,11 @@ class AgroRobotGUI(QMainWindow):
             )
 
     def _resolve_model_ref_treino(self):
-        model_raw = self.input_treino_model_path.text().strip() if hasattr(self, "input_treino_model_path") else ""
+        model_raw = (
+            self.input_treino_model_path.text().strip()
+            if hasattr(self, "input_treino_model_path")
+            else ""
+        )
         if not model_raw:
             model_raw = "yolo11n.pt"
             if hasattr(self, "input_treino_model_path"):
@@ -3822,7 +4080,11 @@ class AgroRobotGUI(QMainWindow):
         if not self._ensure_dataset_dirs():
             return None, None
         if self._is_yolo_job_running():
-            QMessageBox.warning(self, "Treino IA", "Já existe um processo de treino/smoke em execução.")
+            QMessageBox.warning(
+                self,
+                "Treino IA",
+                "Já existe um processo de treino/smoke em execução.",
+            )
             return None, None
 
         yolo_bin = shutil.which("yolo")
@@ -3831,7 +4093,11 @@ class AgroRobotGUI(QMainWindow):
             return None, None
 
         if not os.path.isfile(self.dataset_data_yaml):
-            QMessageBox.warning(self, "Treino IA", f"Arquivo data.yaml não encontrado: {self.dataset_data_yaml}")
+            QMessageBox.warning(
+                self,
+                "Treino IA",
+                f"Arquivo data.yaml não encontrado: {self.dataset_data_yaml}",
+            )
             return None, None
 
         ok_strict, strict_errors, strict_summary = self._validar_dataset_para_treino_strict()
@@ -3841,7 +4107,10 @@ class AgroRobotGUI(QMainWindow):
             if len(strict_errors) > len(top_errors):
                 msg += f"\n- ... +{len(strict_errors) - len(top_errors)} erro(s)"
             QMessageBox.warning(self, "Treino IA", msg)
-            self._set_treino_status("Treino bloqueado: dataset inconsistente (modo estrito).", "#ff8a80")
+            self._set_treino_status(
+                "Treino bloqueado: dataset inconsistente (modo estrito).",
+                "#ff8a80",
+            )
             self._log_treino_ia(msg.replace("\n", " | "), "#ff5555")
             return None, None
         self._log_treino_ia(
@@ -3858,7 +4127,10 @@ class AgroRobotGUI(QMainWindow):
 
         if not is_local and model_ref.endswith(".pt"):
             self._log_treino_ia(
-                f"Modelo '{model_ref}' será resolvido pelo Ultralytics. Pode exigir internet para download.",
+                (
+                    f"Modelo '{model_ref}' será resolvido pelo Ultralytics. Pode"
+                    f"exigir internet para download."
+                ),
                 "#ffcc80",
             )
 
@@ -3871,8 +4143,18 @@ class AgroRobotGUI(QMainWindow):
 
         imgsz = int(self.spin_treino_imgsz.value()) if hasattr(self, "spin_treino_imgsz") else 640
         batch = int(self.spin_treino_batch.value()) if hasattr(self, "spin_treino_batch") else 8
-        epochs = 1 if smoke else int(self.spin_treino_epochs.value() if hasattr(self, "spin_treino_epochs") else 100)
-        device = self.combo_treino_device.currentText().strip() if hasattr(self, "combo_treino_device") else "cpu"
+        epochs = (
+            1
+            if smoke
+            else int(self.spin_treino_epochs.value())
+            if hasattr(self, "spin_treino_epochs")
+            else 100
+        )
+        device = (
+            self.combo_treino_device.currentText().strip()
+            if hasattr(self, "combo_treino_device")
+            else "cpu"
+        )
         run_name = ("smoke_" if smoke else "train_") + time.strftime("%Y%m%d_%H%M%S")
         process_name = "YOLO_SMOKE" if smoke else "YOLO_TREINO"
         project_dir = os.path.join(self.workspace, "runs", "detect")
@@ -3900,13 +4182,15 @@ class AgroRobotGUI(QMainWindow):
         self._set_treino_botoes_execucao_enabled(False)
         self._set_treino_status(f"{'Smoke test' if smoke else 'Treino'} em execução...", "#ffcc80")
         self._log_treino_ia(
-            f"Iniciado {process_name} | model={model_ref} | epochs={epochs} | batch={batch} | imgsz={imgsz} | device={device}",
+            (
+                f"Iniciado {process_name} | model={model_ref} | epochs={epochs}"
+                f"| batch={batch} | imgsz={imgsz} | device={device}"
+            ),
             "#80cbc4",
         )
         proc.finished.connect(
-            lambda exit_code, _exit_status, name=process_name, run=run_name: self._on_treino_yolo_finished(
-                name, int(exit_code), run
-            )
+            lambda exit_code, _exit_status, name=process_name, run=run_name:
+            self._on_treino_yolo_finished(name, int(exit_code), run)
         )
 
     def executar_smoke_test_treino_ia(self):
@@ -3951,7 +4235,11 @@ class AgroRobotGUI(QMainWindow):
                 self.lbl_coleta_usb.setStyleSheet("color: #b0bec5; font-size: 11px;")
 
     def _capture_resolution(self):
-        raw = self.combo_capture_resolution.currentText().strip() if hasattr(self, "combo_capture_resolution") else "1280x720"
+        raw = (
+            self.combo_capture_resolution.currentText().strip()
+            if hasattr(self, "combo_capture_resolution")
+            else "1280x720"
+        )
         m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", raw)
         if not m:
             return 1280, 720
@@ -3997,7 +4285,10 @@ class AgroRobotGUI(QMainWindow):
         if os.path.isfile(self.script_photo_capture):
             return (
                 f"python3 {shlex.quote(self.script_photo_capture)}",
-                "Executável instalado 'photo_capture_node' não encontrado. Usando script fonte como fallback.",
+                (
+                    "Executável instalado 'photo_capture_node' não encontrado."
+                    "Usando script fonte como fallback."
+                ),
             )
 
         return (
@@ -4019,10 +4310,17 @@ class AgroRobotGUI(QMainWindow):
         usb_mount, erro_usb = self._selecionar_pendrive_para_coleta()
         if not usb_mount:
             QMessageBox.warning(self, "Coleta de Fotos", erro_usb or "Pendrive não disponível.")
-            self._set_capture_status("Bloqueado: pendrive obrigatório para iniciar coleta.", "#ff8a80")
+            self._set_capture_status(
+                "Bloqueado: pendrive obrigatório para iniciar coleta.",
+                "#ff8a80",
+            )
             return False
 
-        camera_index = int(self.spin_capture_camera_index.value()) if hasattr(self, "spin_capture_camera_index") else 0
+        camera_index = (
+            int(self.spin_capture_camera_index.value())
+            if hasattr(self, "spin_capture_camera_index")
+            else 0
+        )
         ok_camera, erro_camera = self._validar_camera_coleta(camera_index)
         if not ok_camera:
             QMessageBox.warning(self, "Coleta de Fotos", erro_camera)
@@ -4039,10 +4337,26 @@ class AgroRobotGUI(QMainWindow):
             self.log(f"[COLETA_FOTOS] {launcher_msg}", "#ffb300")
 
         width, height = self._capture_resolution()
-        distance_m = float(self.spin_capture_distance.value()) if hasattr(self, "spin_capture_distance") else 0.5
-        jpeg_quality = int(self.spin_capture_jpeg_quality.value()) if hasattr(self, "spin_capture_jpeg_quality") else 90
-        speed_min = float(self.spin_capture_speed_min.value()) if hasattr(self, "spin_capture_speed_min") else 0.05
-        reserve_mb = int(self.spin_capture_reserve_mb.value()) if hasattr(self, "spin_capture_reserve_mb") else 512
+        distance_m = (
+            float(self.spin_capture_distance.value())
+            if hasattr(self, "spin_capture_distance")
+            else 0.5
+        )
+        jpeg_quality = (
+            int(self.spin_capture_jpeg_quality.value())
+            if hasattr(self, "spin_capture_jpeg_quality")
+            else 90
+        )
+        speed_min = (
+            float(self.spin_capture_speed_min.value())
+            if hasattr(self, "spin_capture_speed_min")
+            else 0.05
+        )
+        reserve_mb = (
+            int(self.spin_capture_reserve_mb.value())
+            if hasattr(self, "spin_capture_reserve_mb")
+            else 512
+        )
 
         cmd = (
             f"{launcher} --ros-args "
@@ -4071,7 +4385,10 @@ class AgroRobotGUI(QMainWindow):
             self.log(f"[COLETA_FOTOS] {msg}", "#ff5555")
             return False
 
-        proc.finished.connect(lambda exit_code, _status: self._on_photo_capture_finished(int(exit_code)))
+        proc.finished.connect(
+            lambda exit_code,
+            _status: self._on_photo_capture_finished(int(exit_code)),
+        )
         self.capture_rota_ativa = True
         self.capture_session_id = session_id
         self.capture_status_snapshot = {}
@@ -4080,7 +4397,10 @@ class AgroRobotGUI(QMainWindow):
         self._set_capture_usb_label(usb_mount)
         self._set_capture_status("Coleta de fotos iniciada com sucesso.", "#9ccc65")
         self.log(
-            f"[COLETA_FOTOS] Captura iniciada | sessão={session_id} | usb={usb_mount} | distância={distance_m:.2f}m",
+            (
+                f"[COLETA_FOTOS] Captura iniciada | sessão={session_id} |"
+                f"usb={usb_mount} | distância={distance_m:.2f}m"
+            ),
             "#9ccc65",
         )
         return True
@@ -4101,7 +4421,10 @@ class AgroRobotGUI(QMainWindow):
         )
         self._set_capture_status(msg, "#ff8a80")
         self.log(f"[COLETA_FOTOS] {msg}", "#ff5555")
-        rota_ativa = "ROTA" in self.processos and self.processos["ROTA"].state() != QProcess.NotRunning
+        rota_ativa = (
+            "ROTA" in self.processos
+            and self.processos["ROTA"].state() != QProcess.NotRunning
+        )
         if rota_ativa and not self._closing:
             QMessageBox.warning(self, "Coleta de Fotos", msg)
 
@@ -4150,12 +4473,16 @@ class AgroRobotGUI(QMainWindow):
             self.lbl_capture_count.setText(str(int(status.get("photos_total", 0))))
         if hasattr(self, "lbl_capture_distance_total"):
             try:
-                self.lbl_capture_distance_total.setText(f"{float(status.get('distance_total_m', 0.0)):.2f} m")
+                self.lbl_capture_distance_total.setText(
+                    f"{float(status.get('distance_total_m', 0.0)):.2f} m"
+                )
             except Exception:
                 self.lbl_capture_distance_total.setText("0.00 m")
         if hasattr(self, "lbl_capture_free_space"):
             try:
-                self.lbl_capture_free_space.setText(f"{float(status.get('free_space_mb', 0.0)):.1f} MB")
+                self.lbl_capture_free_space.setText(
+                    f"{float(status.get('free_space_mb', 0.0)):.1f} MB"
+                )
             except Exception:
                 self.lbl_capture_free_space.setText("--")
         if hasattr(self, "lbl_capture_est_remaining"):
@@ -4189,11 +4516,18 @@ class AgroRobotGUI(QMainWindow):
                 self.atualizar_monitor_ia()
             if hasattr(self, "tab_treino_ia") and self.tabs.currentWidget() == self.tab_treino_ia:
                 self._ensure_dataset_dirs()
-            if hasattr(self, "tab_coleta_fotos") and self.tabs.currentWidget() == self.tab_coleta_fotos:
+            if (
+                hasattr(self, "tab_coleta_fotos")
+                and self.tabs.currentWidget() == self.tab_coleta_fotos
+            ):
                 self.atualizar_monitor_captura_fotos()
 
     def obter_perfil_rastreabilidade_codigo(self):
-        perfil_texto = self.combo_rastreabilidade_perfil.currentText() if hasattr(self, "combo_rastreabilidade_perfil") else ""
+        perfil_texto = (
+            self.combo_rastreabilidade_perfil.currentText()
+            if hasattr(self, "combo_rastreabilidade_perfil")
+            else ""
+        )
         perfil_map = {
             "Universal (UE + Brasil)": "universal",
             "Somente UE (EUDR)": "ue",
@@ -4204,7 +4538,11 @@ class AgroRobotGUI(QMainWindow):
 
     def atualizar_campos_rastreabilidade_dinamicos(self, *_args):
         perfil = self.obter_perfil_rastreabilidade_codigo()
-        implemento = self.combo_implemento.currentText() if hasattr(self, "combo_implemento") else ""
+        implemento = (
+            self.combo_implemento.currentText()
+            if hasattr(self, "combo_implemento")
+            else ""
+        )
         is_pulverizador = "Pulverizador" in implemento
 
         exige_gln_epc = perfil in ("universal", "brasil")
@@ -4229,7 +4567,8 @@ class AgroRobotGUI(QMainWindow):
         self.lbl_robot.setText("Identificador do robô: *")
         self.lbl_operador.setText("Identificador do operador: *")
         self.lbl_prod_quimico.setText(f"Produto químico utilizado:{' *' if exige_produto else ''}")
-        self.lbl_reg_mapa.setText(f"Nº Registro no MAPA:{' *' if exige_registro else ' (opcional)'}")
+        registro_suffix = " *" if exige_registro else " (opcional)"
+        self.lbl_reg_mapa.setText(f"Nº Registro no MAPA:{registro_suffix}")
 
     def validar_campos_rastreabilidade(self, implemento, perfil):
         erros = []
@@ -4284,10 +4623,16 @@ class AgroRobotGUI(QMainWindow):
 
         if is_pulverizador:
             if perfil in ("universal", "brasil", "ue") and not produto:
-                add_erro("Produto químico é obrigatório para pulverizador neste perfil.", self.input_produto_quimico)
+                add_erro(
+                    "Produto químico é obrigatório para pulverizador neste perfil.",
+                    self.input_produto_quimico,
+                )
             if perfil in ("universal", "brasil"):
                 if is_placeholder(registro_mapa):
-                    add_erro("Número de Registro no MAPA é obrigatório para este perfil.", self.input_registro_mapa)
+                    add_erro(
+                        "Número de Registro no MAPA é obrigatório para este perfil.",
+                        self.input_registro_mapa,
+                    )
 
         return (len(erros) == 0, erros, foco_widget)
 
@@ -4295,10 +4640,10 @@ class AgroRobotGUI(QMainWindow):
     def atualizar_interface_tanque(self, abrir_aba=False):
         implemento = self.combo_implemento.currentText()
         if "Pulverizador" in implemento:
-            self.frame_tanque.show() # Mostra
+            self.frame_tanque.show()  # Mostra
             self.lbl_impl_sem_config.hide()
         else:
-            self.frame_tanque.hide() # Esconde
+            self.frame_tanque.hide()  # Esconde
             self.lbl_impl_sem_config.show()
 
         if abrir_aba and hasattr(self, "tabs_left"):
@@ -4324,18 +4669,22 @@ class AgroRobotGUI(QMainWindow):
             f"QProgressBar::chunk {{ background: {cor}; border-radius: 6px; }}"
         )
         self.lbl_battery_percent.setText(f"{nivel_int}%")
-        self.lbl_battery_percent.setStyleSheet(f"color: {cor}; font-weight: bold; min-width: 36px;")
+        self.lbl_battery_percent.setStyleSheet(
+            f"color: {cor}; font-weight: bold; min-width: 36px;"
+        )
 
         if carregando:
             self.lbl_charging.setText("⚡ Carregando")
             self.lbl_charging.setStyleSheet(
-                "background-color: #2e7d32; color: #ffffff; padding: 4px 10px; border-radius: 8px; "
+                "background-color: #2e7d32; color: #ffffff; padding: 4px 10px;"
+                "border-radius: 8px; "
                 "border: 1px solid #43a047; font-weight: bold; font-size: 12px;"
             )
         else:
             self.lbl_charging.setText("⚡ Não carregando")
             self.lbl_charging.setStyleSheet(
-                "background-color: #455a64; color: #ffffff; padding: 4px 10px; border-radius: 8px; "
+                "background-color: #455a64; color: #ffffff; padding: 4px 10px;"
+                "border-radius: 8px; "
                 "border: 1px solid #546e7a; font-weight: bold; font-size: 12px;"
             )
 
@@ -4345,14 +4694,16 @@ class AgroRobotGUI(QMainWindow):
             self.btn_wifi.setText(f"📶 Wi-Fi: {nome}")
             self.btn_wifi.setStyleSheet(
                 "QPushButton { background-color: #1b5e20; color: #ffffff; padding: 2px 8px; "
-                "border-radius: 8px; border: 1px solid #2e7d32; font-weight: bold; font-size: 11px; }"
+                "border-radius: 8px; border: 1px solid #2e7d32; font-weight:"
+                "bold; font-size: 11px; }"
                 "QPushButton:hover { background-color: #2e7d32; border: 1px solid #43a047; }"
             )
         else:
             self.btn_wifi.setText("📶 Wi-Fi: Desconectado")
             self.btn_wifi.setStyleSheet(
                 "QPushButton { background-color: #2b2b2b; color: #e0e0e0; padding: 2px 8px; "
-                "border-radius: 8px; border: 1px solid #3c3c3c; font-weight: bold; font-size: 11px; }"
+                "border-radius: 8px; border: 1px solid #3c3c3c; font-weight:"
+                "bold; font-size: 11px; }"
                 "QPushButton:hover { background-color: #353535; border: 1px solid #4a4a4a; }"
             )
 
@@ -4574,14 +4925,23 @@ class AgroRobotGUI(QMainWindow):
             msg = (result.stderr or result.stdout or "Falha ao conectar.").strip()
             return False, msg
         return True, "Conectado."
+
     def toggle_suporte(self):
         if not self.suporte_ativo:
-            reply = QMessageBox.question(self, 'Permitir Acesso?', 
-                                         "Autorizar controle remoto?", QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.No: return
+            reply = QMessageBox.question(
+                self,
+                'Permitir Acesso?',
+                "Autorizar controle remoto?",
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if reply == QMessageBox.No:
+                return
             self.suporte_ativo = True
             self.btn_suporte.setText("📡 Suporte: ON")
-            self.btn_suporte.setStyleSheet("QPushButton { background-color: #2962ff; color: white; font-weight: bold; padding: 12px; border-radius: 6px; border: 2px solid #00b0ff; }")
+            self.btn_suporte.setStyleSheet(
+                "QPushButton { background-color: #2962ff; color: white; font-weight: "
+                "bold; padding: 12px; border-radius: 6px; border: 2px solid #00b0ff; }"
+            )
             self.log(">>> SUPORTE REMOTO ATIVADO <<<", "cyan")
             self.run_process("SUPORTE", "echo 'VPN ON' && sleep 2")
         else:
@@ -4600,10 +4960,13 @@ class AgroRobotGUI(QMainWindow):
         process.setProcessChannelMode(QProcess.MergedChannels)
         process.readyReadStandardOutput.connect(lambda: self.handle_output(name, process))
         process.finished.connect(lambda *_: self.processos.pop(name, None))
-        process.errorOccurred.connect(lambda err, proc_name=name: self._on_process_error(proc_name, err))
+        process.errorOccurred.connect(
+            lambda err, proc_name=name: self._on_process_error(proc_name, err)
+        )
         env_prefix = ""
         if name in ("IA_PIPELINE", "PHOTO_CAPTURE"):
-            # Garante user-site habilitada para a IA (ultralytics) e mantém libs de sistema para cv2.
+            # Garante user-site habilitada para a IA (ultralytics) e mantém libs de sistema para
+            # cv2.
             env_prefix = "unset PYTHONNOUSERSITE; "
             if name == "IA_PIPELINE":
                 user_site = ""
@@ -4617,7 +4980,9 @@ class AgroRobotGUI(QMainWindow):
                         "/usr/lib/python3/dist-packages:${PYTHONPATH}; "
                     )
                 else:
-                    env_prefix += "export PYTHONPATH=/usr/lib/python3/dist-packages:${PYTHONPATH}; "
+                    env_prefix += (
+                        "export PYTHONPATH=/usr/lib/python3/dist-packages:${PYTHONPATH}; "
+                    )
             else:
                 env_prefix += "export PYTHONPATH=/usr/lib/python3/dist-packages:${PYTHONPATH}; "
         cmd_string = (
@@ -4636,10 +5001,14 @@ class AgroRobotGUI(QMainWindow):
         if text:
             if "[WAYPOINT]" in text:
                 self._update_waypoint_label(text)
-            if "GeoJSON" in text: self.log(f"[{name}]: {text}", "#00ffff") 
-            elif "Restante" in text: self.log(f"[{name}]: {text}", "#ff00ff")
-            elif "error" in text.lower(): self.log(f"[{name}]: {text}", "#ff5555")
-            else: self.log(f"[{name}]: {text}")
+            if "GeoJSON" in text:
+                self.log(f"[{name}]: {text}", "#00ffff")
+            elif "Restante" in text:
+                self.log(f"[{name}]: {text}", "#ff00ff")
+            elif "error" in text.lower():
+                self.log(f"[{name}]: {text}", "#ff5555")
+            else:
+                self.log(f"[{name}]: {text}")
 
     def _update_waypoint_label(self, text):
         match = re.search(r"\[WAYPOINT\]\s*(\d+)\s*/\s*(\d+)", text)
@@ -4799,7 +5168,9 @@ class AgroRobotGUI(QMainWindow):
 
         if hasattr(self, "btn_sistema"):
             self.btn_sistema.setText("🚀 Ligar Sistema (Launch)")
-            self.btn_sistema.setStyleSheet(self.btn_sistema.styleSheet().replace("#444", "#e65100"))
+            self.btn_sistema.setStyleSheet(
+                self.btn_sistema.styleSheet().replace("#444", "#e65100")
+            )
         self._set_movimento_ativo(False)
 
     def _avaliar_alertas_temperatura_cpu(self, temp_c):
@@ -4855,8 +5226,9 @@ class AgroRobotGUI(QMainWindow):
             else:
                 cor = "#e53935"
             self.cpu_bar.setStyleSheet(
-                "QProgressBar { background: #0f141a; border: 1px solid #32404f; border-radius: 5px; }"
-                f"QProgressBar::chunk {{ background: {cor}; border-radius: 5px; }}"
+                    "QProgressBar { background: #0f141a; border: 1px solid #32404f;"
+                    "border-radius: 5px; }"
+                    f"QProgressBar::chunk {{ background: {cor}; border-radius: 5px; }}"
             )
         if hasattr(self, "lbl_cpu"):
             self.lbl_cpu.setText(f"CPU: {uso_cpu_int}%")
@@ -4864,8 +5236,12 @@ class AgroRobotGUI(QMainWindow):
         temp_c = self._read_cpu_temp_c()
         if hasattr(self, "lbl_cpu_temp"):
             if temp_c is None:
-                self.lbl_cpu_temp.setText(f"Temp CPU: --.-\u00b0C / max {self.cpu_temp_max_c:.1f}\u00b0C")
-                self.lbl_cpu_temp.setStyleSheet("color: #90a4ae; font-size: 10px; font-weight: bold;")
+                self.lbl_cpu_temp.setText(
+                    f"Temp CPU: --.-\u00b0C / max {self.cpu_temp_max_c:.1f}\u00b0C"
+                )
+                self.lbl_cpu_temp.setStyleSheet(
+                    "color: #90a4ae; font-size: 10px; font-weight: bold;"
+                )
             else:
                 if temp_c >= self.cpu_temp_max_c:
                     cor_temp = "#ff5252"
@@ -4873,7 +5249,10 @@ class AgroRobotGUI(QMainWindow):
                     cor_temp = "#ffd54f"
                 else:
                     cor_temp = "#80cbc4"
-                self.lbl_cpu_temp.setText(f"Temp CPU: {temp_c:.1f}\u00b0C / max {self.cpu_temp_max_c:.1f}\u00b0C")
+                self.lbl_cpu_temp.setText((
+                    f"Temp CPU: {temp_c:.1f}\\u00b0C / max"
+                    f"{self.cpu_temp_max_c:.1f}\\u00b0C"
+                ))
                 self.lbl_cpu_temp.setStyleSheet(
                     f"color: {cor_temp}; font-size: 10px; font-weight: bold;"
                 )
@@ -4944,7 +5323,8 @@ class AgroRobotGUI(QMainWindow):
                 self.lbl_ros_nodes_status.setText("Nenhum nó publicando dados no momento.")
             else:
                 self.lbl_ros_nodes_status.setText(
-                    f"{total_nodes} nós publicando ({total_pubs} tópicos). Atualização automática a cada 8s."
+                        f"{total_nodes} nós publicando ({total_pubs} tópicos)."
+                        f"Atualização automática a cada 8s."
                 )
         if hasattr(self, "btn_ros_nodes_export"):
             self.btn_ros_nodes_export.setEnabled(total_nodes > 0)
@@ -5027,7 +5407,8 @@ class AgroRobotGUI(QMainWindow):
             QMessageBox.warning(
                 self,
                 "Exportar para Pen Drive",
-                "Nenhum pen drive montado foi encontrado.\nConecte o dispositivo e tente novamente."
+                "Nenhum pen drive montado foi encontrado.\\nConecte o"
+                "dispositivo e tente novamente."
             )
             return
 
@@ -5050,7 +5431,11 @@ class AgroRobotGUI(QMainWindow):
         try:
             shutil.copytree(origem, destino_exportacao)
         except Exception as e:
-            QMessageBox.warning(self, "Exportar para Pen Drive", f"Falha ao exportar arquivos: {e}")
+            QMessageBox.warning(
+                self,
+                "Exportar para Pen Drive",
+                f"Falha ao exportar arquivos: {e}",
+            )
             return
 
         self.log(f"[Rastreabilidade] Exportado para pen drive: {destino_exportacao}", "#9ccc65")
@@ -5084,7 +5469,8 @@ class AgroRobotGUI(QMainWindow):
         confirmacao = QMessageBox.warning(
             self,
             "Exclusão permanente",
-            "Você está prestes a excluir PERMANENTEMENTE todos os arquivos de rastreabilidade do sistema.\n"
+            "Você está prestes a excluir PERMANENTEMENTE todos os arquivos"
+            "de rastreabilidade do sistema.\\n"
             "Não haverá como recuperar após a confirmação.\n\n"
             "Deseja continuar?",
             QMessageBox.Yes | QMessageBox.No,
@@ -5105,7 +5491,10 @@ class AgroRobotGUI(QMainWindow):
             return
 
         self.log(
-            f"[Rastreabilidade] Exclusão permanente concluída: {total_arquivos} arquivos removidos.",
+            (
+                f"[Rastreabilidade] Exclusão permanente concluída:"
+                f"{total_arquivos} arquivos removidos."
+            ),
             "#ff8a80",
         )
         QMessageBox.information(
@@ -5120,7 +5509,8 @@ class AgroRobotGUI(QMainWindow):
             QMessageBox.warning(
                 self,
                 "Exportação ROS2",
-                "Não há dados de nós publicadores para exportar.\nAbra a aba e aguarde a atualização."
+                "Não há dados de nós publicadores para exportar.\\nAbra a aba e"
+                "aguarde a atualização."
             )
             return
 
@@ -5187,8 +5577,14 @@ class AgroRobotGUI(QMainWindow):
             self._parar_captura_fotos()
 
     def limpar_e_reconstruir(self):
-        reply = QMessageBox.question(self, 'Confirmação', "Limpar build/install e recompilar?", QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.No: return
+        reply = QMessageBox.question(
+            self,
+            'Confirmação',
+            "Limpar build/install e recompilar?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.No:
+            return
         self.log(">>> RECOMPILANDO... <<<", "cyan")
         self.btn_rebuild.setEnabled(False)
         self.progress_bar.show()
@@ -5243,7 +5639,10 @@ class AgroRobotGUI(QMainWindow):
             for repo in repos_git:
                 comandos.append(f"cd {shlex.quote(repo)} && git pull --ff-only")
         else:
-            self.log("Nenhum repositório Git detectado. Seguindo apenas com compilação local.", "orange")
+            self.log(
+                "Nenhum repositório Git detectado. Seguindo apenas com compilação local.",
+                "orange",
+            )
 
         comandos.append(
             f"cd {shlex.quote(self.workspace)} && "
@@ -5284,17 +5683,24 @@ class AgroRobotGUI(QMainWindow):
             self.processos[nome].waitForFinished(2000)
             subprocess.run(["pkill", "-f", "ros2 launch"])
             self.btn_sistema.setText("🚀 Ligar Sistema (Launch)")
-            self.btn_sistema.setStyleSheet(self.btn_sistema.styleSheet().replace("#444", "#e65100"))
+            self.btn_sistema.setStyleSheet(
+                self.btn_sistema.styleSheet().replace("#444", "#e65100")
+            )
             self._set_movimento_ativo(False)
         else:
-            cmd_launch = "ros2 launch agro_robot_sim fazenda_completa.launch.py use_sim_time:=True autostart:=True"
+            cmd_launch = (
+                "ros2 launch agro_robot_sim fazenda_completa.launch.py"
+                "use_sim_time:=True autostart:=True"
+            )
             proc_sistema = self.run_process(nome, cmd_launch)
             if proc_sistema:
                 proc_sistema.finished.connect(
                     lambda exit_code, _status: self._on_sistema_fazenda_finished(int(exit_code))
                 )
             self.btn_sistema.setText("⏹️ Parar")
-            self.btn_sistema.setStyleSheet(self.btn_sistema.styleSheet().replace("#e65100", "#444"))
+            self.btn_sistema.setStyleSheet(
+                self.btn_sistema.styleSheet().replace("#e65100", "#444")
+            )
 
     def _on_sistema_fazenda_finished(self, exit_code):
         self._set_movimento_ativo(False)
@@ -5305,7 +5711,9 @@ class AgroRobotGUI(QMainWindow):
             self._encerrar_rastreabilidade()
         if hasattr(self, "btn_sistema"):
             self.btn_sistema.setText("🚀 Ligar Sistema (Launch)")
-            self.btn_sistema.setStyleSheet(self.btn_sistema.styleSheet().replace("#444", "#e65100"))
+            self.btn_sistema.setStyleSheet(
+                self.btn_sistema.styleSheet().replace("#444", "#e65100")
+            )
 
     def iniciar_gravador(self):
         cmd = f"gnome-terminal -- python3 {self.script_gravador}"
@@ -5338,11 +5746,11 @@ class AgroRobotGUI(QMainWindow):
 
     def executar_rota(self):
         item = self.lista_rotas.currentItem()
-        if not item: 
+        if not item:
             QMessageBox.warning(self, "Aviso", "Selecione uma rota!")
             return
         self._reset_waypoint_ui()
-        
+
         # --- LÓGICA INTELIGENTE DE IMPLEMENTO ---
         implemento = self.combo_implemento.currentText()
 
@@ -5372,7 +5780,10 @@ class AgroRobotGUI(QMainWindow):
             agua_litros = str(self.spin_agua.value())
             dose_ml = str(self.spin_dose.value())
             event_type = "CHEMICAL_APPLICATION"
-            msg_log = f">>> PREPARO: {agua_litros}L Agua + {dose_ml}ml {produto} | MAPA: {registro_mapa} <<<"
+            msg_log = (
+                f">>> PREPARO: {agua_litros}L Agua + {dose_ml}ml {produto} | "
+                f"MAPA: {registro_mapa} <<<"
+            )
         elif "Roçadeira" in implemento:
             # Roçadeira: Envia ZEROS para o sistema de rastreabilidade
             produto = "Operacao_Mecanica_Rocadeira"
@@ -5380,7 +5791,7 @@ class AgroRobotGUI(QMainWindow):
             agua_litros = "0"
             dose_ml = "0"
             event_type = "MECHANICAL_CUTTING"
-            msg_log = f">>> OPERAÇÃO MECÂNICA (ROÇADEIRA) - SEM APLICAÇÃO <<<"
+            msg_log = ">>> OPERAÇÃO MECÂNICA (ROÇADEIRA) - SEM APLICAÇÃO <<<"
         else:
             # Sem implemento acoplado
             produto = "Operacao_Sem_Implemento"
@@ -5388,7 +5799,7 @@ class AgroRobotGUI(QMainWindow):
             agua_litros = "0"
             dose_ml = "0"
             event_type = "TRANSIT"
-            msg_log = f">>> OPERAÇÃO SEM IMPLEMENTO ACOPLADO <<<"
+            msg_log = ">>> OPERAÇÃO SEM IMPLEMENTO ACOPLADO <<<"
 
         perfil = self.obter_perfil_rastreabilidade_codigo()
         if self.chk_rastreabilidade.isChecked():
@@ -5430,7 +5841,7 @@ class AgroRobotGUI(QMainWindow):
             self.capture_session_id = ""
             self._set_capture_session_label("")
             self._set_capture_usb_label("")
-        
+
         proc_rota = self.run_process(
             "ROTA",
             f"python3 {shlex.quote(self.script_leitor)} {shlex.quote(item.text())}"
@@ -5443,17 +5854,33 @@ class AgroRobotGUI(QMainWindow):
             return
         self._set_movimento_ativo(True)
         proc_rota.finished.connect(lambda *_: self._on_rota_finished())
-        
+
         if self.chk_rastreabilidade.isChecked():
             self.log(msg_log, "cyan")
-            farm_gln = self.input_farm_gln.text().strip() if hasattr(self, "input_farm_gln") else ""
+            farm_gln = (
+                self.input_farm_gln.text().strip()
+                if hasattr(self, "input_farm_gln")
+                else ""
+            )
             epc = self.input_epc.text().strip() if hasattr(self, "input_epc") else ""
-            robot_uuid = self.input_robot_uuid.text().strip() if hasattr(self, "input_robot_uuid") else ""
-            operator_id = self.input_operator_id.text().strip() if hasattr(self, "input_operator_id") else ""
+            robot_uuid = (
+                self.input_robot_uuid.text().strip()
+                if hasattr(self, "input_robot_uuid")
+                else ""
+            )
+            operator_id = (
+                self.input_operator_id.text().strip()
+                if hasattr(self, "input_operator_id")
+                else ""
+            )
 
             if hasattr(self, "combo_rastreabilidade_perfil"):
-                self.log(f"Perfil de rastreabilidade: {self.combo_rastreabilidade_perfil.currentText()}", "#9ccc65")
-            
+                perfil_texto = self.combo_rastreabilidade_perfil.currentText()
+                self.log(
+                    f"Perfil de rastreabilidade: {perfil_texto}",
+                    "#9ccc65",
+                )
+
             # Envia dados para gerar pacote padronizado (UE + Brasil)
             cmd_rastreio = (
                 f"python3 {shlex.quote(self.script_rastreabilidade)} "
@@ -5472,7 +5899,7 @@ class AgroRobotGUI(QMainWindow):
                 f"--ia_status_topic /caatinga_vision/infestation/status "
                 f"--ia_recommendation_topic /caatinga_vision/spray/recommendation"
             )
-            
+
             self.run_process("RASTREABILIDADE", cmd_rastreio)
 
     def concluir_rota(self):
@@ -5493,7 +5920,8 @@ class AgroRobotGUI(QMainWindow):
         self.lista_rotas.clear()
         if os.path.exists(self.path_rotas):
             for f in sorted(os.listdir(self.path_rotas)):
-                if f.endswith('.csv'): self.lista_rotas.addItem(f.replace('.csv', ''))
+                if f.endswith('.csv'):
+                    self.lista_rotas.addItem(f.replace('.csv', ''))
 
     def atualizar_sensores_colisao(self, esquerda=None, frente=None, direita=None):
         updates = {
@@ -5513,7 +5941,11 @@ class AgroRobotGUI(QMainWindow):
             )
         self._atualizar_luz_estado()
 
-        if any(self.sensor_collision_state.values()) and hasattr(self, "tabs") and hasattr(self, "tab_sensores"):
+        if (
+            any(self.sensor_collision_state.values())
+            and hasattr(self, "tabs")
+            and hasattr(self, "tab_sensores")
+        ):
             self.tabs.setCurrentWidget(self.tab_sensores)
 
     def atualizar_mapa(self, lat, lon, zoom=18):
@@ -5584,11 +6016,13 @@ class AgroRobotGUI(QMainWindow):
                 proc.kill()
         event.accept()
 
+
 def main():
     app = QApplication(sys.argv)
     gui = AgroRobotGUI()
     gui.show()
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()

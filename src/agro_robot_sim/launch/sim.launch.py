@@ -1,11 +1,13 @@
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 import xacro
+
 
 def generate_launch_description():
     pkg_agro = get_package_share_directory('agro_robot_sim')
@@ -52,7 +54,10 @@ def generate_launch_description():
     spawn_robot = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-topic', 'robot_description', '-entity', 'agro_robot', '-x', '0', '-y', '0', '-z', '0.1'],
+        arguments=[
+            '-topic', 'robot_description', '-entity', 'agro_robot',
+            '-x', '0', '-y', '0', '-z', '0.1',
+        ],
         output='screen'
     )
 

@@ -20,6 +20,7 @@ jobs:
         with:
           args: --no-progress --verbose README.md
           fail: true
+          failIfEmpty: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
