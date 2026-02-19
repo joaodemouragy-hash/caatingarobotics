@@ -1,5 +1,7 @@
 # caatingarobotics
 
+experimental fork for jazzy/ gazebo harmonic
+
 ROS 2 workspace for precision agriculture robotics, combining simulation, navigation,
 computer vision inference, and field traceability analytics.
 
@@ -30,8 +32,8 @@ High-level data flow:
 
 ## Tech Stack
 
-- ROS 2 Humble
-- Gazebo + Nav2 + SLAM Toolbox
+- ROS 2 jazzy
+- Gazebo harmonic + Nav2 + SLAM Toolbox
 - YOLO (Ultralytics), OpenCV, `cv_bridge`
 - Python (`rclpy`) and CMake (`ament_cmake`)
 - PyQt5 operational panel tooling
@@ -62,8 +64,8 @@ High-level data flow:
 
 ### 1. Prerequisites
 
-- Ubuntu 22.04
-- ROS 2 Humble
+- Ubuntu Noble
+- ROS 2 jazzy
 - `colcon`
 - `rosdep`
 
