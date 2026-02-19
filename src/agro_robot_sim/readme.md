@@ -21,7 +21,7 @@ The module is organized into the following key directories:
 
 | Feature | Specification |
 | :---- | :---- |
-| **ROS Distribution** | ROS 2 Humble Hawksbill |
+| **ROS Distribution** | ROS 2 Jazzy|
 | **Build System** | `ament_cmake` |
 | **Simulation Engine** | Gazebo |
 | **Transform Tree** | Managed via `robot_state_publisher` |
